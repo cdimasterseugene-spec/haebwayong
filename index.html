@@ -1,0 +1,3500 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fffaf1">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="해봐용">
+<meta name="application-name" content="해봐용">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<title>해봐용 🦆</title>
+
+<style>
+/* ===== 전역 스타일 / 색상 / 기본 박스 규칙 ===== */
+:root {
+  --bg: #fffaf1;
+  --brown: #5b4438;
+  --line: #eadfce;
+  --yellow: #f6cf42;
+  --green: #77b68a;
+  --muted: #9b897a;
+  --danger: #c95b4b;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%;
+  background: #eee8df;
+  font-family: "Noto Sans KR", Arial, sans-serif;
+  color: var(--brown);
+  -webkit-tap-highlight-color: transparent;
+}
+.app {
+  width: min(390px, 100vw);
+  height: 100%;
+  max-height: 100dvh;
+  margin: 0 auto;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+
+.screen {
+  display: none !important;
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--bg);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 28px 22px 100px;
+  -webkit-overflow-scrolling: touch;
+  z-index: 1;
+}
+.screen.active {
+  display: block !important;
+  z-index: 2;
+}
+
+.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  justify-content: center;
+  min-height: 100%;
+}
+h1 { font-size: 26px; margin: 12px 0; line-height: 1.35; }
+p { line-height: 1.6; color: var(--muted); margin: 8px 0; }
+small { color: var(--muted); font-size: 13px; }
+h3 { margin: 20px 0 10px; font-size: 17px; }
+
+/* ===== 런치 스크린 =====
+   앱 시작 시 보여주는 하늘/지구/치용 애니메이션 영역 */
+#launch {
+  background: linear-gradient(180deg, #5BA3D9 0%, #87CEEB 35%, #E0F7FA 60%, #C8E6C9 78%, #81C784 100%);
+  padding: 0;
+  overflow: hidden;
+}
+.launch-scene {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 별/구름 */
+.stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.star {
+  position: absolute;
+  width: 3px; height: 3px;
+  background: #fff;
+  border-radius: 50%;
+  opacity: 0.7;
+  animation: twinkle 2.4s ease-in-out infinite;
+}
+.star:nth-child(1) { top: 12%; left: 18%; animation-delay: 0s; }
+.star:nth-child(2) { top: 22%; left: 72%; animation-delay: 0.4s; width: 2px; height: 2px; }
+.star:nth-child(3) { top: 8%; left: 55%; animation-delay: 0.9s; }
+.star:nth-child(4) { top: 28%; left: 30%; animation-delay: 1.3s; width: 2px; height: 2px; }
+.star:nth-child(5) { top: 15%; left: 85%; animation-delay: 0.6s; }
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.95; transform: scale(1.3); }
+}
+
+.cloud {
+  position: absolute;
+  background: rgba(255,255,255,0.75);
+  border-radius: 40px;
+  opacity: 0.85;
+}
+.cloud::before, .cloud::after {
+  content: '';
+  position: absolute;
+  background: rgba(255,255,255,0.75);
+  border-radius: 50%;
+}
+.c1 {
+  width: 70px; height: 22px;
+  top: 18%; left: 8%;
+  animation: drift 12s linear infinite;
+}
+.c1::before { width: 28px; height: 28px; top: -14px; left: 12px; }
+.c1::after { width: 22px; height: 22px; top: -10px; left: 36px; }
+.c2 {
+  width: 55px; height: 18px;
+  top: 28%; right: 10%;
+  animation: drift 15s linear infinite reverse;
+}
+.c2::before { width: 24px; height: 24px; top: -12px; left: 8px; }
+.c2::after { width: 18px; height: 18px; top: -8px; left: 28px; }
+@keyframes drift {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(18px); }
+  100% { transform: translateX(0); }
+}
+
+/* 지구 - 불규칙 대륙 모양 */
+.earth {
+  position: absolute;
+  bottom: -90px;
+  width: 340px;
+  height: 340px;
+  background: radial-gradient(circle at 42% 35%,
+    #29B6F6 0%,
+    #0288D1 35%,
+    #01579B 70%,
+    #0D47A1 100%);
+  border-radius: 50%;
+  box-shadow:
+    inset -36px -22px 70px rgba(0,0,0,0.35),
+    inset 18px 14px 35px rgba(255,255,255,0.14),
+    0 0 0 10px #4FC3F7,
+    0 0 55px rgba(3,169,244,0.4);
+  overflow: hidden;
+}
+
+.land { position: absolute; }
+
+/* 북아메리카 - clip-path로 불규칙 형태 */
+.na-body {
+  width: 100px;
+  height: 115px;
+  top: 28px;
+  left: 48px;
+  background: linear-gradient(155deg, #8D6E63 0%, #6D4C41 15%, #66BB6A 35%, #43A047 60%, #558B2F 85%, #5D4037 100%);
+  clip-path: polygon(
+    18% 8%, 35% 2%, 55% 5%, 72% 12%, 88% 22%,
+    95% 38%, 92% 52%, 85% 62%, 78% 70%,
+    70% 78%, 58% 85%, 45% 88%, 32% 82%,
+    22% 72%, 12% 58%, 8% 42%, 10% 25%, 15% 15%
+  );
+  transform: rotate(-12deg);
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.25);
+}
+
+/* 알래스카 */
+.na-alaska {
+  width: 36px;
+  height: 28px;
+  top: 22px;
+  left: 22px;
+  background: linear-gradient(135deg, #81C784, #5D4037);
+  clip-path: polygon(15% 40%, 35% 10%, 70% 5%, 95% 30%, 85% 70%, 50% 95%, 10% 75%);
+  transform: rotate(-35deg);
+}
+
+/* 멕시코 */
+.na-mexico {
+  width: 40px;
+  height: 48px;
+  top: 115px;
+  left: 70px;
+  background: linear-gradient(160deg, #A1887F, #6D4C41 35%, #558B2F 70%);
+  clip-path: polygon(
+    30% 5%, 60% 0%, 85% 15%, 95% 40%,
+    80% 65%, 70% 85%, 45% 95%, 20% 80%,
+    10% 55%, 15% 25%
+  );
+  transform: rotate(8deg);
+}
+
+/* 중미 */
+.na-central {
+  width: 24px;
+  height: 32px;
+  top: 150px;
+  left: 95px;
+  background: #43A047;
+  clip-path: polygon(40% 0%, 80% 15%, 95% 50%, 70% 90%, 30% 95%, 5% 60%, 15% 20%);
+  transform: rotate(20deg);
+}
+
+/* 남아메리카 북부 */
+.sa-top {
+  width: 32px;
+  height: 40px;
+  top: 178px;
+  left: 108px;
+  background: linear-gradient(170deg, #66BB6A, #2E7D32);
+  clip-path: polygon(25% 5%, 70% 0%, 95% 30%, 85% 70%, 50% 100%, 10% 75%, 5% 35%);
+  transform: rotate(5deg);
+  opacity: 0.9;
+}
+
+/* 구름 */
+.cloud-earth {
+  position: absolute;
+  background: rgba(255,255,255,0.7);
+  border-radius: 50%;
+  filter: blur(1.5px);
+  pointer-events: none;
+}
+.ce1 {
+  width: 75px; height: 26px;
+  top: 50px; left: 35px;
+  transform: rotate(-28deg);
+  opacity: 0.6;
+}
+.ce2 {
+  width: 50px; height: 20px;
+  top: 88px; left: 115px;
+  transform: rotate(12deg);
+  opacity: 0.5;
+}
+.ce3 {
+  width: 85px; height: 28px;
+  top: 135px; left: 25px;
+  transform: rotate(-8deg);
+  opacity: 0.45;
+}
+.ce4 {
+  width: 42px; height: 18px;
+  top: 38px; left: 135px;
+  opacity: 0.4;
+}
+.ce5 {
+  width: 55px; height: 22px;
+  bottom: 75px; left: 45px;
+  transform: rotate(18deg);
+  opacity: 0.38;
+}
+
+.ocean {
+  position: absolute;
+  background: rgba(129, 212, 250, 0.28);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.ocean1 {
+  width: 80px; height: 55px;
+  top: 160px; left: 12px;
+}
+.ocean2 {
+  width: 48px; height: 38px;
+  top: 28px; right: 38px;
+  background: rgba(179, 229, 252, 0.32);
+}
+
+/* 치용 걷기 */
+.launch-duck {
+  position: absolute;
+  bottom: 165px;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: 130px;
+  animation: walk 1.15s ease-in-out infinite;
+  z-index: 5;
+  filter: drop-shadow(0 8px 6px rgba(0,0,0,0.18));
+}
+@keyframes walk {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  25% { transform: translateY(-6px) rotate(0deg); }
+  50% { transform: translateY(-16px) rotate(3deg); }
+  75% { transform: translateY(-6px) rotate(0deg); }
+}
+
+/* 발 그림자 */
+.duck-shadow {
+  position: absolute;
+  bottom: 148px;
+  left: 50%;
+  width: 70px;
+  height: 14px;
+  margin-left: -35px;
+  background: rgba(0,0,0,0.18);
+  border-radius: 50%;
+  animation: shadowPulse 1.15s ease-in-out infinite;
+  z-index: 4;
+}
+@keyframes shadowPulse {
+  0%, 100% { transform: scaleX(1); opacity: 0.22; }
+  50% { transform: scaleX(0.7); opacity: 0.12; }
+}
+
+.launch-text {
+  position: absolute;
+  bottom: 58px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 800;
+  color: #3E2723;
+  letter-spacing: -0.5px;
+  text-shadow: 0 2px 0 rgba(255,255,255,0.5);
+  animation: fadeIn 0.9s ease 0.25s both;
+}
+.launch-sub {
+  position: absolute;
+  bottom: 34px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 13px;
+  color: #5D4037;
+  opacity: 0.85;
+  animation: fadeIn 0.9s ease 0.5s both;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 로딩바 */
+.loading-wrap {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 160px;
+  height: 6px;
+  background: rgba(255,255,255,0.35);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+.loading-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #F6CF42, #FFB300);
+  border-radius: 10px;
+  animation: loadBar 2s ease-in-out forwards;
+}
+@keyframes loadBar {
+  0% { width: 0%; }
+  20% { width: 25%; }
+  50% { width: 55%; }
+  80% { width: 85%; }
+  100% { width: 100%; }
+}
+
+/* ===== 오리 (눈 = 검은 점만) ===== */
+.duck {
+  width: 130px;
+  height: 120px;
+  position: relative;
+  margin: 12px auto 8px;
+}
+.duck .body {
+  position: absolute;
+  width: 90px; height: 72px;
+  background: #f0d9b5;
+  border: 5px solid var(--brown);
+  border-radius: 50% 50% 45% 45%;
+  bottom: 12px; left: 22px;
+}
+.duck .head {
+  position: absolute;
+  width: 72px; height: 66px;
+  background: #f0d9b5;
+  border: 5px solid var(--brown);
+  border-radius: 55%;
+  top: 0; left: 8px;
+}
+.duck .cap {
+  position: absolute;
+  width: 66px; height: 24px;
+  background: #8d5c42;
+  border: 5px solid var(--brown);
+  border-radius: 32px 32px 14px 14px;
+  top: -2px; left: 10px;
+}
+.duck .eye {
+  position: absolute;
+  width: 10px; height: 10px;
+  background: #2e241f;
+  border-radius: 50%;
+  top: 36px; left: 48px;
+  /* 흰자 제거 → 그냥 검은 점 */
+}
+.duck .beak {
+  position: absolute;
+  width: 40px; height: 20px;
+  background: var(--yellow);
+  border: 5px solid var(--brown);
+  border-radius: 16px;
+  top: 42px; left: 62px;
+}
+.duck .foot {
+  position: absolute;
+  width: 30px; height: 11px;
+  background: #f5a623;
+  border: 3px solid var(--brown);
+  border-radius: 10px;
+  bottom: 0;
+}
+.duck .f1 { left: 36px; }
+.duck .f2 { left: 74px; }
+.duck.big {
+  transform: scale(1.35);
+  margin: 40px auto 24px;
+}
+
+
+/* ===== 치용 모자 꾸미기 =====
+   기본 모자와 상점 미리보기의 위치/모양을 담당해용. */
+.duck .hat {
+  position: absolute;
+  z-index: 6;
+  pointer-events: none;
+}
+.duck .hat-none { display: none; }
+.duck .hat-beanie {
+  width: 58px; height: 28px;
+  top: -13px; left: 16px;
+  background: #ef5350;
+  border: 4px solid var(--brown);
+  border-radius: 40px 40px 10px 10px;
+  transform: rotate(-5deg);
+}
+.duck .hat-beanie::after {
+  content: '';
+  position: absolute;
+  width: 12px; height: 12px;
+  top: -10px; left: 20px;
+  background: #fff;
+  border: 3px solid var(--brown);
+  border-radius: 50%;
+}
+.duck .hat-crown {
+  width: 52px; height: 30px;
+  top: -17px; left: 18px;
+  background: #ffd54f;
+  border: 4px solid var(--brown);
+  clip-path: polygon(0 100%, 8% 18%, 32% 48%, 50% 0, 68% 48%, 92% 18%, 100% 100%);
+  transform: rotate(2deg);
+}
+.duck .hat-crown::after {
+  content: '';
+  position: absolute;
+  left: 8px; right: 8px; bottom: 3px;
+  height: 4px; border-radius: 4px;
+  background: #ffb300;
+}
+.duck .hat-party {
+  width: 0; height: 0;
+  top: -28px; left: 31px;
+  border-left: 20px solid transparent;
+  border-right: 20px solid transparent;
+  border-bottom: 42px solid #7e57c2;
+  transform: rotate(6deg);
+  filter: drop-shadow(0 0 0 var(--brown));
+}
+.duck .hat-party::after {
+  content: '';
+  position: absolute;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: #f6cf42;
+  border: 2px solid var(--brown);
+  top: -49px; left: -6px;
+}
+.duck .hat-wizard {
+  width: 0; height: 0;
+  top: -31px; left: 28px;
+  border-left: 24px solid transparent;
+  border-right: 10px solid transparent;
+  border-bottom: 46px solid #3949ab;
+  transform: rotate(-6deg);
+}
+.duck .hat-wizard::after {
+  content: '★';
+  position: absolute;
+  font-size: 13px;
+  color: #ffd54f;
+  left: -10px; top: 20px;
+  transform: rotate(6deg);
+}
+.duck .hat-beret {
+  width: 58px; height: 24px;
+  top: -11px; left: 10px;
+  background: #66bb6a;
+  border: 4px solid var(--brown);
+  border-radius: 55% 55% 45% 45%;
+  transform: rotate(-9deg);
+}
+.duck .hat-beret::after {
+  content: '';
+  position: absolute;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: #81c784;
+  border: 3px solid var(--brown);
+  top: -8px; left: 23px;
+}
+
+/* 작은 미리보기 */
+.shop-duck .hat-beanie { width: 40px; height: 19px; top: -9px; left: 15px; border-width: 3px; }
+.shop-duck .hat-beanie::after { width: 8px; height: 8px; top: -7px; left: 14px; border-width: 2px; }
+.shop-duck .hat-crown { width: 36px; height: 21px; top: -12px; left: 17px; border-width: 3px; }
+.shop-duck .hat-crown::after { left: 6px; right: 6px; bottom: 2px; height: 3px; }
+.shop-duck .hat-party { top: -20px; left: 28px; border-left-width: 14px; border-right-width: 14px; border-bottom-width: 30px; }
+.shop-duck .hat-party::after { width: 8px; height: 8px; border-width: 1px; top: -36px; left: -4px; }
+.shop-duck .hat-wizard { top: -22px; left: 27px; border-left-width: 17px; border-right-width: 7px; border-bottom-width: 31px; }
+.shop-duck .hat-wizard::after { font-size: 9px; left: -7px; top: 14px; }
+.shop-duck .hat-beret { width: 40px; height: 17px; top: -8px; left: 10px; border-width: 3px; }
+.shop-duck .hat-beret::after { width: 7px; height: 7px; top: -6px; left: 16px; border-width: 2px; }
+
+.hat-shop-title {
+  margin-top: 22px;
+}
+.hat-preview {
+  width: 72px;
+  height: 66px;
+  border-radius: 16px;
+  background: #fffaf1;
+  border: 2px dashed var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+}
+.hat-symbol {
+  font-size: 34px;
+  line-height: 1;
+}
+
+/* ===== 월말 한정 장신구 =====
+   1~12월 월말 장신구의 공통 표시와 치용 머리 위 장식을 담당해용. */
+.monthly-special {
+  margin: 12px 0 14px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #fff7d6, #fff1b8);
+  border: 2px solid #f6cf42;
+  color: #5c4520;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(246,207,66,.18);
+}
+.monthly-special.today-special {
+  animation: specialPulse 1.3s ease-in-out infinite;
+}
+@keyframes specialPulse {
+  0%,100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+/* 월간 장신구 - 치용 머리 위에 표시 */
+.duck .hat-season-01::before,.duck .hat-season-02::before,.duck .hat-season-03::before,.duck .hat-season-04::before,
+.duck .hat-season-05::before,.duck .hat-season-06::before,.duck .hat-season-07::before,.duck .hat-season-08::before,
+.duck .hat-season-09::before,.duck .hat-season-10::before,.duck .hat-season-11::before,.duck .hat-season-12::before {
+  position:absolute; top:-20px; left:7px; font-size:34px; line-height:1;
+  filter: drop-shadow(0 2px 0 rgba(88,55,36,.18));
+}
+.duck .hat-season-01::before { content:'🧧'; }
+.duck .hat-season-02::before { content:'💕'; }
+.duck .hat-season-03::before { content:'🌸'; }
+.duck .hat-season-04::before { content:'🌷'; }
+.duck .hat-season-05::before { content:'🌱'; }
+.duck .hat-season-06::before { content:'🌈'; }
+.duck .hat-season-07::before { content:'🍉'; }
+.duck .hat-season-08::before { content:'🐚'; }
+.duck .hat-season-09::before { content:'🌾'; }
+.duck .hat-season-10::before { content:'🎃'; }
+.duck .hat-season-11::before { content:'🍁'; }
+.duck .hat-season-12::before { content:'🎄'; }
+
+/* ===== 출석 체크 보상 =====
+   월간 출석 모달, 진행률, 보상 카드의 UI 스타일입니다. */
+.daily-modalbox {
+  width: min(760px, 94vw);
+  max-width: 760px;
+  padding: 18px 18px 16px;
+  background: linear-gradient(145deg, #4a0c5d 0%, #7d168a 52%, #2c0a49 100%);
+  color: #fff;
+  border: 4px solid #f4c84c;
+  box-shadow: 0 18px 55px rgba(34, 0, 55, 0.45), inset 0 1px 0 rgba(255,255,255,.18);
+  overflow: hidden;
+  position: relative;
+}
+.daily-modalbox::before {
+  content: '★';
+  position: absolute;
+  top: 8px;
+  left: 16px;
+  font-size: 24px;
+  opacity: .9;
+}
+.daily-modalbox::after {
+  content: '★';
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  font-size: 20px;
+  opacity: .85;
+}
+.daily-kicker {
+  font-weight: 800;
+  font-size: 13px;
+  opacity: .88;
+  letter-spacing: .4px;
+}
+.daily-modalbox h1 {
+  margin: 4px 0 8px;
+  text-shadow: 0 2px 0 rgba(0,0,0,.18);
+}
+.daily-subtitle {
+  margin: 0 0 14px;
+  font-weight: 700;
+  opacity: .95;
+}
+
+.daily-progress-wrap {
+  margin: 0 0 10px;
+}
+.daily-progress-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 900;
+  margin-bottom: 5px;
+  opacity: .95;
+}
+.daily-progress {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(0,0,0,.28);
+  border: 1px solid rgba(255,255,255,.18);
+  overflow: hidden;
+}
+.daily-progress i {
+  display: block;
+  width: 0%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ffe36a, #ff9f43, #ffdc5b);
+  box-shadow: 0 0 12px rgba(255,224,100,.55);
+  transition: width .45s ease;
+}
+.daily-board {
+  background: rgba(24, 3, 38, .28);
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 18px;
+  padding: 7px;
+  backdrop-filter: blur(4px);
+}
+.daily-window-note {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: rgba(255,255,255,.82);
+  margin: 0 0 6px;
+}
+.daily-track {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+.daily-day {
+  min-width: 0;
+  position: relative;
+  background: linear-gradient(#f7cb55, #e9aa2f);
+  border: 2px solid #8b5a16;
+  border-radius: 13px;
+  padding: 8px 3px 9px;
+  min-height: 84px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  color: #3b2207;
+  text-align: center;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 3px 0 rgba(59,34,7,.18);
+}
+.daily-day .day-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 900;
+  margin-bottom: 4px;
+}
+.daily-day .day-icon {
+  display: block;
+  font-size: 22px;
+  line-height: 1;
+  margin-bottom: 3px;
+}
+.daily-day .day-reward {
+  display: block;
+  font-size: 12px;
+  line-height: 1.15;
+  font-weight: 900;
+}
+.daily-day.claimed {
+  background: linear-gradient(#e9e9e9, #c9c9c9);
+  border-color: #777;
+  color: #444;
+  position: relative;
+}
+.daily-day.claimed::after {
+  content: '✓';
+  position: absolute;
+  right: 5px;
+  top: 3px;
+  font-size: 14px;
+  font-weight: 900;
+}
+.daily-day.today {
+  transform: translateY(-4px) scale(1.03);
+  border-color: #fff4a8;
+  box-shadow: 0 0 0 3px rgba(255,242,138,.28), 0 7px 14px rgba(0,0,0,.18);
+}
+.daily-day.today::before {
+  content: '오늘';
+  position: absolute;
+  left: 50%;
+  top: -9px;
+  transform: translateX(-50%);
+  background: #ff7d38;
+  color: #fff;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 900;
+  border: 2px solid #fff1c7;
+}
+.daily-day.future {
+  filter: saturate(.78) brightness(.92);
+}
+.daily-big-reward {
+  margin: 10px 0 4px;
+  font-size: 20px;
+  font-weight: 900;
+}
+.daily-modalbox #closeDailyModal {
+  background: linear-gradient(#ffe36a, #f1be32);
+  color: #3a2600;
+  border: 3px solid #fff0a5;
+  box-shadow: 0 4px 0 #9d6c1d;
+}
+@media (max-width: 900px) {
+  .daily-modalbox { width: min(720px, 95vw); }
+  .daily-track { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; }
+  .daily-day { padding: 7px 2px 8px; min-height: 78px; }
+  .daily-day .day-icon { font-size: 19px; }
+  .daily-day .day-reward { font-size: 10px; }
+}
+
+@media (max-width: 680px) {
+  .daily-track { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+  .daily-day { padding: 6px 2px 7px; border-radius: 10px; min-height: 72px; }
+  .daily-day .day-icon { font-size: 18px; }
+  .daily-day .day-reward { font-size: 9px; }
+}
+
+.primary, .secondary {
+  width: 100%;
+  padding: 16px;
+  border-radius: 18px;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 12px;
+  font-family: inherit;
+  border: none;
+}
+.primary { background: var(--yellow); color: var(--brown); }
+.secondary { background: #fff; color: var(--brown); border: 1px solid var(--line); }
+.primary:active, .secondary:active { opacity: 0.9; }
+
+.choice, .card {
+  background: #fff;
+  border: 2px solid var(--line);
+  border-radius: 20px;
+  padding: 16px;
+  margin: 12px 0;
+}
+.choice { cursor: pointer; text-align: left; user-select: none; }
+.choice.selected {
+  border-color: var(--yellow);
+  box-shadow: 0 4px 14px #f6cf4240;
+}
+.choice b { font-size: 17px; }
+
+input {
+  width: 100%;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  font-size: 16px;
+  margin: 10px 0;
+  background: #fff;
+  font-family: inherit;
+  color: var(--brown);
+}
+input:focus {
+  outline: none;
+  border-color: var(--yellow);
+  box-shadow: 0 0 0 3px #f6cf4244;
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.badge {
+  background: #fff4bd;
+  padding: 7px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.progress {
+  height: 10px;
+  background: #f1e9dd;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+.progress i {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: var(--green);
+  transition: width 0.3s ease;
+  border-radius: 10px;
+}
+
+.task {
+  padding: 14px 4px;
+  border-bottom: 1px solid #f0e8dd;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+.task:last-child { border-bottom: none; }
+.check {
+  width: 24px; height: 24px;
+  border: 2px solid #cbbdad;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+  font-size: 14px;
+}
+.done .check {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+.done .txt { text-decoration: line-through; color: var(--muted); }
+.txt { flex: 1; line-height: 1.45; word-break: break-word; }
+.delete {
+  margin-left: auto;
+  border: none;
+  background: none;
+  font-size: 22px;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 0 4px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+nav {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 72px;
+  background: #fff;
+  border-top: 1px solid var(--line);
+  display: none;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 20;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.navbtn {
+  border: none;
+  background: none;
+  font-size: 11px;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1.35;
+  padding: 6px 10px;
+}
+.navbtn.active { font-weight: 700; color: var(--brown); }
+
+.modal {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 50;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.modal.show { display: flex; }
+.modalbox {
+  background: #fff;
+  border-radius: 28px;
+  padding: 28px 24px;
+  text-align: center;
+  width: 100%;
+  max-width: 320px;
+}
+
+.error {
+  min-height: 22px;
+  color: var(--danger);
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+/* 레벨 */
+.level-box {
+  background: #fff;
+  border: 2px solid var(--line);
+  border-radius: 20px;
+  padding: 14px 16px;
+  margin: 12px 0;
+  width: 100%;
+  text-align: left;
+}
+.level-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.level-title {
+  font-weight: 700;
+  font-size: 15px;
+}
+.level-xp {
+  font-size: 12px;
+  color: var(--muted);
+}
+.level-bar {
+  height: 10px;
+  background: #f1e9dd;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.level-bar i {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #f6cf42, #ffb300);
+  border-radius: 10px;
+  transition: width 0.35s ease;
+}
+.level-name {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+
+
+/* ===== 모자 위치 보정 =====
+   기본 모자(cap)와 장착 모자가 겹치지 않도록 하고,
+   각 모자가 치용 머리 중심에 자연스럽게 안착하도록 보정해용. */
+.duck:not(.hat-none) .cap { display: none; }
+.duck.hat-none .cap { display: block; }
+
+.duck .hat-beanie {
+  top: -16px;
+  left: 14px;
+  z-index: 8;
+}
+.duck .hat-crown {
+  top: -20px;
+  left: 18px;
+  z-index: 8;
+}
+.duck .hat-party {
+  top: -31px;
+  left: 31px;
+  z-index: 8;
+}
+.duck .hat-wizard {
+  top: -34px;
+  left: 28px;
+  z-index: 8;
+}
+.duck .hat-beret {
+  top: -14px;
+  left: 10px;
+  z-index: 8;
+}
+
+/* 월간 한정 장신구도 같은 머리 기준점에 고정 */
+.duck .hat-season-01,
+.duck .hat-season-02,
+.duck .hat-season-03,
+.duck .hat-season-04,
+.duck .hat-season-05,
+.duck .hat-season-06,
+.duck .hat-season-07,
+.duck .hat-season-08,
+.duck .hat-season-09,
+.duck .hat-season-10,
+.duck .hat-season-11,
+.duck .hat-season-12 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 88px;
+  height: 66px;
+  z-index: 8;
+  pointer-events: none;
+}
+.duck .hat-season-01::before,
+.duck .hat-season-02::before,
+.duck .hat-season-03::before,
+.duck .hat-season-04::before,
+.duck .hat-season-05::before,
+.duck .hat-season-06::before,
+.duck .hat-season-07::before,
+.duck .hat-season-08::before,
+.duck .hat-season-09::before,
+.duck .hat-season-10::before,
+.duck .hat-season-11::before,
+.duck .hat-season-12::before {
+  top: -13px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* 작은 상점 미리보기에서도 위치가 어긋나지 않게 */
+.shop-duck .hat-beanie { top: -11px; left: 14px; }
+.shop-duck .hat-crown { top: -14px; left: 17px; }
+.shop-duck .hat-party { top: -22px; left: 28px; }
+.shop-duck .hat-wizard { top: -24px; left: 27px; }
+.shop-duck .hat-beret { top: -10px; left: 10px; }
+
+/* 스킨별 색 */
+.duck.skin-default .body,
+.duck.skin-default .head { background: #f0d9b5; }
+.duck.skin-mint .body,
+.duck.skin-mint .head { background: #B2DFDB; }
+.duck.skin-mint .cap { background: #00897B; }
+.duck.skin-pink .body,
+.duck.skin-pink .head { background: #F8BBD0; }
+.duck.skin-pink .cap { background: #C2185B; }
+.duck.skin-pink .beak { background: #FF8A80; }
+.duck.skin-night .body,
+.duck.skin-night .head { background: #5C6BC0; }
+.duck.skin-night .cap { background: #283593; }
+.duck.skin-night .beak { background: #FFD54F; }
+.duck.skin-night .eye { background: #E8EAF6; }
+.duck.skin-gold .body,
+.duck.skin-gold .head { background: #FFE082; }
+.duck.skin-gold .cap { background: #FF8F00; }
+.duck.skin-gold .beak { background: #FF6F00; }
+.duck.skin-gold .foot { background: #FFB300; }
+.duck.skin-rainbow .body,
+.duck.skin-rainbow .head {
+  background: linear-gradient(135deg, #F8BBD0, #B2EBF2, #C8E6C9, #FFE082);
+}
+.duck.skin-rainbow .cap { background: #7E57C2; }
+.duck.skin-rainbow .beak { background: #FF7043; }
+
+/* ===== 스킨 꾸미기 업그레이드: 단순 색상 대신 개성 강화 ===== */
+.duck.skin-default .body,
+.duck.skin-default .head {
+  background: linear-gradient(145deg, #ffe8bc 0%, #f0d9b5 65%, #d9b687 100%);
+  box-shadow: inset -7px -6px 0 rgba(141,92,66,0.10), inset 7px 6px 0 rgba(255,255,255,0.28);
+}
+.duck.skin-default .cap {
+  background: linear-gradient(180deg, #a96e50, #7f503b);
+}
+
+.duck.skin-mint .body,
+.duck.skin-mint .head {
+  background:
+    radial-gradient(circle at 22% 28%, rgba(255,255,255,.55) 0 7%, transparent 8%),
+    radial-gradient(circle at 72% 68%, rgba(0,137,123,.16) 0 9%, transparent 10%),
+    linear-gradient(145deg, #d7fff6 0%, #a8e9df 58%, #76cfc2 100%);
+  box-shadow: inset -8px -6px 0 rgba(0,121,107,0.12), 0 0 16px rgba(0,137,123,.16);
+}
+.duck.skin-mint .cap {
+  background: linear-gradient(180deg, #26a69a, #00695c);
+}
+.duck.skin-mint .beak { background: linear-gradient(180deg, #ffe082, #ffb300); }
+.duck.skin-mint .foot { background: #ffb74d; }
+
+.duck.skin-pink .body,
+.duck.skin-pink .head {
+  background:
+    radial-gradient(circle at 24% 38%, rgba(255,255,255,.62) 0 8%, transparent 9%),
+    radial-gradient(circle at 73% 62%, rgba(194,24,91,.12) 0 10%, transparent 11%),
+    linear-gradient(145deg, #ffe1ec 0%, #f8bbd0 55%, #ef8fb0 100%);
+  box-shadow: inset -8px -6px 0 rgba(194,24,91,0.10), 0 0 18px rgba(233,30,99,.14);
+}
+.duck.skin-pink .cap {
+  background: linear-gradient(180deg, #ec407a, #ad1457);
+}
+.duck.skin-pink .eye {
+  box-shadow: 0 0 0 3px rgba(255,255,255,.25);
+}
+.duck.skin-pink .beak { background: linear-gradient(180deg, #ffab91, #ff7043); }
+
+.duck.skin-night .body,
+.duck.skin-night .head {
+  background:
+    radial-gradient(circle at 18% 22%, #fff59d 0 2px, transparent 3px),
+    radial-gradient(circle at 68% 34%, #fff59d 0 2px, transparent 3px),
+    radial-gradient(circle at 54% 76%, #c5cae9 0 2px, transparent 3px),
+    radial-gradient(circle at 83% 70%, #fff59d 0 1.5px, transparent 2.5px),
+    linear-gradient(145deg, #7986cb 0%, #5c6bc0 52%, #3949ab 100%);
+  box-shadow: inset -8px -7px 0 rgba(26,35,126,.20), 0 0 20px rgba(57,73,171,.24);
+}
+.duck.skin-night .cap {
+  background: linear-gradient(180deg, #3949ab, #1a237e);
+}
+.duck.skin-night .beak { background: linear-gradient(180deg, #ffe082, #ffb300); }
+.duck.skin-night .foot { background: #ffca28; }
+
+.duck.skin-gold .body,
+.duck.skin-gold .head {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.48) 0 14%, transparent 15% 40%, rgba(255,255,255,.22) 41% 50%, transparent 51%),
+    linear-gradient(145deg, #fff8c4 0%, #ffe082 45%, #ffca28 100%);
+  box-shadow: inset -9px -7px 0 rgba(255,143,0,.18), 0 0 24px rgba(255,193,7,.34);
+}
+.duck.skin-gold .cap {
+  background: linear-gradient(180deg, #ffc107, #ff8f00);
+  box-shadow: 0 0 12px rgba(255,193,7,.45);
+}
+.duck.skin-gold .beak { background: linear-gradient(180deg, #ffab00, #f57c00); }
+.duck.skin-gold .foot { background: #ff9800; }
+
+.duck.skin-rainbow .body,
+.duck.skin-rainbow .head {
+  background: linear-gradient(120deg, #ffb6d3 0%, #ffd2a6 24%, #fff39a 45%, #bff7d0 68%, #a9ddff 84%, #d1b3ff 100%);
+  background-size: 220% 220%;
+  box-shadow: inset -9px -7px 0 rgba(126,87,194,.10), 0 0 24px rgba(126,87,194,.22);
+  animation: rainbowSkin 5s ease-in-out infinite;
+}
+.duck.skin-rainbow .cap {
+  background: linear-gradient(135deg, #7e57c2, #ec407a, #29b6f6, #66bb6a);
+  background-size: 180% 180%;
+  animation: rainbowCap 4s linear infinite;
+}
+.duck.skin-rainbow .beak { background: linear-gradient(180deg, #ff8a65, #ff5252); }
+.duck.skin-rainbow .foot { background: linear-gradient(90deg, #ff9800, #ffca28); }
+
+@keyframes rainbowSkin {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+@keyframes rainbowCap {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+
+.shop-duck.skin-gold .body,
+.shop-duck.skin-gold .head { box-shadow: 0 0 12px rgba(255,193,7,.28), inset -5px -4px 0 rgba(255,143,0,.14); }
+.shop-duck.skin-night .body,
+.shop-duck.skin-night .head { box-shadow: 0 0 10px rgba(57,73,171,.20); }
+.shop-duck.skin-rainbow .body,
+.shop-duck.skin-rainbow .head { background-size: 180% 180%; animation: rainbowSkin 5s ease-in-out infinite; }
+
+.shop-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  padding: 12px;
+  margin: 10px 0;
+  text-align: left;
+}
+.shop-item.equipped {
+  border-color: var(--yellow);
+  box-shadow: 0 3px 12px #f6cf4240;
+}
+.shop-duck {
+  width: 72px;
+  height: 66px;
+  position: relative;
+  flex-shrink: 0;
+  margin: 0;
+  overflow: visible;
+}
+.shop-duck .body {
+  width: 50px; height: 40px;
+  border-width: 3px;
+  bottom: 6px; left: 12px;
+}
+.shop-duck .head {
+  width: 40px; height: 36px;
+  border-width: 3px;
+  top: 0; left: 2px;
+}
+.shop-duck .cap {
+  width: 36px; height: 13px;
+  border-width: 3px;
+  top: -1px; left: 4px;
+}
+.shop-duck .eye {
+  width: 6px; height: 6px;
+  top: 20px; left: 26px;
+}
+.shop-duck .beak {
+  width: 22px; height: 11px;
+  border-width: 3px;
+  top: 23px; left: 34px;
+}
+.shop-duck .foot {
+  width: 16px; height: 6px;
+  border-width: 2px;
+}
+.shop-duck .f1 { left: 18px; }
+.shop-duck .f2 { left: 40px; }
+
+.shop-info { flex: 1; min-width: 0; }
+.shop-info b { font-size: 15px; }
+.shop-info small { display: block; margin-top: 2px; }
+.shop-item button {
+  flex-shrink: 0;
+  border: none;
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-weight: 700;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  background: var(--yellow);
+  color: var(--brown);
+}
+.shop-item button:disabled {
+  background: #eee;
+  color: var(--muted);
+  cursor: default;
+}
+.shop-item button.owned {
+  background: #fff;
+  border: 1px solid var(--line);
+}
+
+.empty-card {
+  text-align: center;
+  color: var(--muted);
+  padding: 24px 16px;
+}
+
+/* ===== 다크 모드 =====
+   기본 UI의 색상 변수를 어둡게 바꾸고, 카드/입력창/하단 메뉴까지 함께 보정합니다.
+   런치 스크린의 하늘/지구 연출은 그대로 유지해서 시작 화면의 분위기는 살립니다. */
+.app.dark {
+  --bg: #17191d;
+  --brown: #f4eadf;
+  --line: #343941;
+  --yellow: #f6d45a;
+  --green: #72c792;
+  --muted: #a9a3a0;
+  --danger: #ef7b6a;
+  color-scheme: dark;
+}
+body.theme-dark { background: #0f1114; }
+.app.dark .screen:not(#launch) { background: var(--bg); }
+.app.dark .card,
+.app.dark .choice,
+.app.dark .level-box,
+.app.dark .shop-item,
+.app.dark .modalbox,
+.app.dark .empty-card {
+  background: #202329;
+  color: var(--brown);
+  border-color: var(--line);
+}
+.app.dark p,
+.app.dark small,
+.app.dark .shop-info small,
+.app.dark .level-name,
+.app.dark .error { color: var(--muted); }
+.app.dark input,
+.app.dark select,
+.app.dark textarea {
+  background: #14161a;
+  color: var(--brown);
+  border-color: #3b4048;
+}
+.app.dark input::placeholder,
+.app.dark textarea::placeholder { color: #777d86; }
+.app.dark .badge { background: #34301d; color: #f8df79; }
+.app.dark .progress { background: #30343b; }
+.app.dark .navbtn { color: #b9bdc4; }
+.app.dark .navbtn.active { color: var(--yellow); }
+.app.dark nav#nav {
+  background: rgba(25, 28, 33, 0.96);
+  border-top-color: #343941;
+}
+.app.dark .secondary {
+  background: #252a31;
+  color: var(--brown);
+  border-color: #414750;
+}
+.app.dark .shop-item button.owned {
+  background: #252a31;
+  color: var(--brown);
+  border-color: #414750;
+}
+.app.dark .modal { background: rgba(0,0,0,0.68); }
+.app.dark .shop-item.equipped {
+  border-color: var(--yellow);
+  box-shadow: 0 3px 16px rgba(246, 212, 90, 0.12);
+}
+.app.dark .choice.selected {
+  border-color: var(--yellow);
+  box-shadow: 0 4px 16px rgba(246, 212, 90, 0.10);
+}
+
+
+
+/* ===== 영상 느낌의 라이트 ↔ 다크 테마 스위치 ===== */
+.theme-setting-row{
+  margin:12px 0 2px;
+}
+.theme-toggle-wrap{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+.theme-toggle{
+  position:relative;
+  display:block;
+  width:230px;
+  height:96px;
+  flex:0 0 auto;
+  border-radius:999px;
+  cursor:pointer;
+  overflow:hidden;
+  isolation:isolate;
+  box-shadow:
+    inset 0 0 0 3px rgba(255,255,255,.55),
+    inset 0 -10px 18px rgba(15,91,125,.13),
+    0 10px 22px rgba(38,57,74,.16);
+  transform:translateZ(0);
+  transition:box-shadow .45s ease, transform .18s ease;
+}
+.theme-toggle:active{ transform:scale(.985); }
+.theme-toggle input{
+  position:absolute;
+  width:1px; height:1px;
+  opacity:0;
+  pointer-events:none;
+}
+.theme-track{
+  position:absolute; inset:0;
+  display:block;
+  border-radius:inherit;
+  background:
+    radial-gradient(circle at 26% 30%, rgba(255,255,255,.45), transparent 28%),
+    linear-gradient(180deg,#39b4dd 0%,#22a9d1 48%,#72c8e2 100%);
+  transition:background .6s ease;
+}
+.theme-sky-glow{
+  position:absolute;
+  inset:auto 0 0 0;
+  height:44%;
+  background:linear-gradient(180deg,transparent,rgba(216,247,255,.28));
+  pointer-events:none;
+}
+.theme-cloud{
+  position:absolute;
+  bottom:10px;
+  width:70px; height:22px;
+  background:rgba(205,241,249,.92);
+  border-radius:999px;
+  filter:blur(.2px);
+  box-shadow:0 3px 8px rgba(49,129,163,.1);
+  transition:transform .72s cubic-bezier(.2,.85,.2,1), opacity .45s ease;
+}
+.theme-cloud:before,.theme-cloud:after{
+  content:""; position:absolute;
+  background:inherit; border-radius:50%;
+}
+.theme-cloud:before{ width:32px;height:32px;left:8px;bottom:6px; }
+.theme-cloud:after{ width:26px;height:26px;right:10px;bottom:4px; }
+.cloud-a{ left:-6px; transform:translateX(0); }
+.cloud-b{ left:76px; width:64px; bottom:16px; transform:translateX(0); opacity:.88; }
+.cloud-c{ right:-4px; width:74px; bottom:8px; transform:translateX(0); opacity:.78; }
+.theme-stars{
+  position:absolute;
+  right:24px; top:18px;
+  font-size:15px; letter-spacing:7px;
+  color:rgba(255,255,255,0);
+  opacity:0;
+  transform:translateY(-3px) scale(.7);
+  transition:opacity .45s ease, transform .6s cubic-bezier(.2,.85,.2,1);
+  text-shadow:0 0 8px rgba(255,255,255,.65);
+}
+.theme-orb{
+  position:absolute;
+  z-index:3;
+  left:13px; top:9px;
+  width:78px; height:78px;
+  border-radius:50%;
+  background:radial-gradient(circle at 38% 34%,#fff78a 0 17%,#ffe343 47%,#ffbf35 77%,#ed9d2b 100%);
+  box-shadow:
+    0 0 0 6px rgba(255,245,159,.18),
+    0 0 22px rgba(255,224,64,.75),
+    0 7px 14px rgba(111,87,34,.15);
+  transition:
+    left .7s cubic-bezier(.16,.9,.18,1),
+    background .55s ease,
+    box-shadow .55s ease,
+    transform .7s cubic-bezier(.16,.9,.18,1);
+}
+.theme-orb-core{
+  position:absolute; inset:0; border-radius:50%;
+  background:radial-gradient(circle at 33% 28%,rgba(255,255,255,.5),transparent 23%),radial-gradient(circle at 58% 62%,rgba(255,206,48,.25),transparent 38%);
+}
+.theme-orb-shine{
+  position:absolute; width:20px;height:10px; left:14px; top:14px;
+  border-radius:999px; background:rgba(255,255,255,.45); filter:blur(2px);
+  transform:rotate(-22deg);
+}
+.theme-orb-crater{
+  position:absolute; border-radius:50%; background:rgba(224,173,30,.22);
+  opacity:0; transition:opacity .35s ease;
+}
+.crater-a{ width:11px;height:7px; right:17px;top:22px; }
+.crater-b{ width:8px;height:5px; left:20px;bottom:18px; }
+.theme-mode-copy{
+  min-width:0;
+  display:flex; flex-direction:column; gap:3px;
+}
+.theme-mode-copy b{ font-size:15px; color:var(--brown); }
+.theme-mode-copy small{ font-size:12px; color:var(--muted); line-height:1.35; }
+
+/* 다크 상태: 태양이 오른쪽으로 부드럽게 이동하며 달로 변하고 구름/별이 등장합니다. */
+.theme-toggle.is-dark{
+  box-shadow:
+    inset 0 0 0 3px rgba(255,255,255,.18),
+    inset 0 -12px 20px rgba(0,0,0,.28),
+    0 10px 24px rgba(0,0,0,.25);
+}
+.theme-toggle.is-dark .theme-track{
+  background:
+    radial-gradient(circle at 78% 25%,rgba(105,118,171,.22),transparent 28%),
+    linear-gradient(180deg,#1f294b 0%,#151c37 52%,#10152b 100%);
+}
+.theme-toggle.is-dark .theme-sky-glow{
+  background:linear-gradient(180deg,transparent,rgba(67,84,140,.16));
+}
+.theme-toggle.is-dark .theme-orb{
+  /* 스위치 너비가 달라져도 오른쪽 여백 13px을 유지해용. */
+  left:calc(100% - 91px);
+  background:radial-gradient(circle at 35% 31%,#fff 0 13%,#edf0ff 42%,#cfd7ff 76%,#aeb9ef 100%);
+  box-shadow:
+    0 0 0 6px rgba(220,229,255,.08),
+    0 0 26px rgba(205,218,255,.25),
+    0 8px 16px rgba(0,0,0,.3);
+  transform:rotate(6deg);
+}
+.theme-toggle.is-dark .theme-orb-crater{ opacity:1; }
+.theme-toggle.is-dark .theme-stars{ opacity:.9; transform:translateY(0) scale(1); color:rgba(255,255,255,.9); }
+.theme-toggle.is-dark .cloud-a{ transform:translateX(-26px) scale(.88); opacity:.25; }
+.theme-toggle.is-dark .cloud-b{ transform:translateX(-6px) scale(.9); opacity:.18; }
+.theme-toggle.is-dark .cloud-c{ transform:translateX(18px) scale(.96); opacity:.25; }
+@media (max-width:700px){
+  .theme-toggle-wrap{ flex-direction:column; align-items:stretch; }
+  .theme-toggle{ width:100%; max-width:260px; }
+}
+@media (prefers-reduced-motion: reduce){
+  .theme-toggle, .theme-track, .theme-orb, .theme-cloud, .theme-stars{ transition-duration:.01ms !important; }
+}
+
+/* ===== 라이트 ↔ 다크 원형 전환 모션 =====
+   테마 버튼을 누른 위치를 중심으로 화면이 원처럼 퍼지며 바뀌도록 합니다. */
+.theme-wipe {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  pointer-events: none;
+  background: var(--wipe-color, #17191d);
+  clip-path: circle(0 at var(--theme-x, 50vw) var(--theme-y, 50vh));
+  opacity: 0;
+}
+.theme-wipe.running {
+  opacity: 1;
+  animation: themeWipeExpand 560ms cubic-bezier(.2,.75,.2,1) forwards;
+}
+.theme-wipe.light {
+  --wipe-color: #fffaf1;
+}
+@keyframes themeWipeExpand {
+  from { clip-path: circle(0 at var(--theme-x, 50vw) var(--theme-y, 50vh)); }
+  to { clip-path: circle(150vmax at var(--theme-x, 50vw) var(--theme-y, 50vh)); }
+}
+
+/* View Transitions API를 지원하는 브라우저에서는 실제 페이지 스냅샷도 같은 원형으로 전환합니다. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-old(root) {
+  z-index: 1;
+}
+::view-transition-new(root) {
+  z-index: 2;
+  clip-path: circle(0 at var(--theme-x, 50vw) var(--theme-y, 50vh));
+  animation: themeViewReveal 560ms cubic-bezier(.2,.75,.2,1) forwards;
+}
+@keyframes themeViewReveal {
+  to { clip-path: circle(150vmax at var(--theme-x, 50vw) var(--theme-y, 50vh)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .theme-wipe.running,
+  ::view-transition-new(root) {
+    animation-duration: 1ms;
+  }
+}
+
+/* ===== 서버 연동용 추가 스타일 (로그인·계정·알림 토스트) ===== */
+#toast {
+  position: absolute; left: 16px; right: 16px; top: calc(16px + env(safe-area-inset-top, 0px));
+  background: var(--brown); color: #fff; border-radius: 16px; padding: 14px 16px;
+  font-size: 14px; font-weight: 700; text-align: center; z-index: 200;
+  opacity: 0; transform: translateY(-10px); pointer-events: none;
+  transition: opacity .2s ease, transform .2s ease;
+}
+#toast.show { opacity: 1; transform: translateY(0); }
+#login .error { margin-top: 10px; text-align: center; }
+.account-row { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+.account-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid var(--line); flex-shrink: 0; }
+.account-row div { min-width: 0; word-break: break-all; }
+button:disabled { opacity: .55; pointer-events: none; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="theme-wipe" id="themeWipe" aria-hidden="true"></div>
+
+  <!-- 런치 스크린 -->
+  <!-- ===== 1. 런치 스크린 ===== -->
+  <section id="launch" class="screen active">
+    <div class="launch-scene">
+      <div class="stars">
+        <div class="star"></div>
+        <div class="star"></div>
+        <div class="star"></div>
+        <div class="star"></div>
+        <div class="star"></div>
+      </div>
+      <div class="cloud c1"></div>
+      <div class="cloud c2"></div>
+      <div class="earth">
+        <div class="land na-body"></div>
+        <div class="land na-alaska"></div>
+        <div class="land na-mexico"></div>
+        <div class="land na-central"></div>
+        <div class="land sa-top"></div>
+        <div class="cloud-earth ce1"></div>
+        <div class="cloud-earth ce2"></div>
+        <div class="cloud-earth ce3"></div>
+        <div class="cloud-earth ce4"></div>
+        <div class="cloud-earth ce5"></div>
+        <div class="ocean ocean1"></div>
+        <div class="ocean ocean2"></div>
+      </div>
+      <div class="duck-shadow"></div>
+      <div class="launch-duck duck">
+        <div class="body"></div><div class="head"></div><div class="cap"></div><div class="hat hat-none"></div>
+        <div class="eye"></div><div class="beak"></div>
+        <div class="foot f1"></div><div class="foot f2"></div>
+      </div>
+      <div class="launch-text">해봐용 🦆</div>
+      <div class="launch-sub">작은 걸음부터 시작해요</div>
+      <div class="loading-wrap">
+        <div class="loading-bar"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 로그인 화면 ===== -->
+  <section id="login" class="screen center">
+    <div class="duck">
+      <div class="body"></div><div class="head"></div><div class="cap"></div><div class="hat hat-none"></div>
+      <div class="eye"></div><div class="beak"></div>
+      <div class="foot f1"></div><div class="foot f2"></div>
+    </div>
+    <h1>해봐용 🦆</h1>
+    <p>치용이랑 매일 작은 목표 하나씩 해봐용!<br>로그인하면 폰·태블릿 어디서든 이어서 할 수 있어용.</p>
+    <button class="primary" id="googleBtn" type="button">Google 계정으로 시작하기</button>
+    <div class="error" id="loginError"></div>
+  </section>
+
+  <!-- ===== 2. 첫 시작 / 환영 화면 ===== -->
+  <section id="welcome" class="screen center">
+    <div class="duck">
+      <div class="body"></div><div class="head"></div><div class="cap"></div><div class="hat hat-none"></div>
+      <div class="eye"></div><div class="beak"></div>
+      <div class="foot f1"></div><div class="foot f2"></div>
+    </div>
+    <h1>안녕이에용! 🦆</h1>
+    <p>저는 <b>치용</b>이에용.<br>오늘부터 작은 것 하나씩 같이 해봐용!</p>
+    <button class="primary" id="startBtn" type="button">치용과 시작하기 →</button>
+  </section>
+
+  <!-- ===== 3. 목표 종류 선택 ===== -->
+  <section id="type" class="screen">
+    <h1>처음으로 무엇을<br>해볼까용?</h1>
+    <p>아주 작은 목표여도 좋아용!</p>
+    <div class="choice" data-type="해야 할 일">
+      <b>📌 해야 할 일</b><br><small>꼭 해야 하는 일이에용</small>
+    </div>
+    <div class="choice" data-type="하고 싶은 일">
+      <b>🌟 하고 싶은 일</b><br><small>해보고 싶었던 일이에용</small>
+    </div>
+    <div class="error" id="typeError"></div>
+    <button class="primary" id="typeNext" type="button">다음 →</button>
+  </section>
+
+  <!-- ===== 4. 첫 목표 생성 ===== -->
+  <section id="create" class="screen">
+    <h1>작게 시작해봐용 🌱</h1>
+    <p id="selectedTypeText"></p>
+    <input id="firstInput" type="text" placeholder="예: 숙제 5분만 하기" maxlength="80" autocomplete="off">
+    <div class="error" id="goalError"></div>
+    <button class="primary" id="createBtn" type="button">첫 목표 만들기! 🚀</button>
+  </section>
+
+  <!-- ===== 5. 홈 / 오늘의 목표 ===== -->
+  <section id="home" class="screen">
+    <div class="top">
+      <div>
+        <b>오늘도 해봐용!</b><br>
+        <small id="dateText"></small>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+        <span class="badge">🔥 <span id="streak">0</span>일</span>
+        <span class="badge">⭐ Lv.<span id="homeLevel">1</span></span>
+      </div>
+    </div>
+    <div class="card">
+      <b>오늘의 첫걸음 🌱</b>
+      <p id="progressText" style="margin:6px 0 0"></p>
+      <div class="progress"><i id="progressBar"></i></div>
+    </div>
+    <div class="card" id="nudgeCard" style="display:none;border-color:#f6cf42">
+      <b id="nudgeTitle">치용 메시지</b>
+      <p id="nudgeText" style="margin:6px 0 0"></p>
+    </div>
+    <h3>오늘의 목표</h3>
+    <div id="tasks"></div>
+    <button class="primary" id="addBtn" type="button">＋ 새로운 목표 추가</button>
+  </section>
+
+  <!-- ===== 6. 추가 목표 생성 ===== -->
+  <section id="add" class="screen">
+    <h1>새로운 목표 🌱</h1>
+    <div class="choice" data-add-type="해야 할 일">
+      <b>📌 해야 할 일</b>
+    </div>
+    <div class="choice" data-add-type="하고 싶은 일">
+      <b>🌟 하고 싶은 일</b>
+    </div>
+    <input id="addInput" type="text" placeholder="무엇을 해볼까용?" maxlength="80" autocomplete="off">
+    <div class="error" id="addError"></div>
+    <button class="primary" id="saveAddBtn" type="button">목표 추가하기</button>
+    <button class="secondary" id="cancelAddBtn" type="button">취소</button>
+  </section>
+
+  <!-- ===== 7. 치용 성장 화면 ===== -->
+  <section id="duck" class="screen center">
+    <h1>치용 🦆</h1>
+    <div class="duck big">
+      <div class="body"></div><div class="head"></div><div class="cap"></div><div class="hat hat-none"></div>
+      <div class="eye"></div><div class="beak"></div>
+      <div class="foot f1"></div><div class="foot f2"></div>
+    </div>
+    <div class="level-box">
+      <div class="level-top">
+        <span class="level-title">Lv. <span id="level">1</span></span>
+        <span class="level-xp"><span id="xpNow">0</span> / <span id="xpNext">20</span> XP</span>
+      </div>
+      <div class="level-bar"><i id="levelBar"></i></div>
+      <div class="level-name" id="levelName">아기 치용</div>
+    </div>
+    <div class="card" style="width:100%">
+      <p id="duckMessage" style="margin:0"></p>
+    </div>
+    <div class="card" style="width:100%">💎 보석 <b id="gems">0</b></div>
+    <div class="card" style="width:100%">🧢 현재 모자 <b id="currentHatName">맨머리 치용</b></div>
+  </section>
+
+  <!-- ===== 8. 상점 ===== -->
+  <section id="shop" class="screen">
+    <h1>상점 🛒</h1>
+    <p>보석으로 치용 스킨을 바꿔봐용!</p>
+    <div class="card" style="text-align:center;margin-bottom:8px">
+      💎 보유 보석 <b id="shopGems">0</b>
+    </div>
+    <div class="error" id="shopMsg" style="min-height:20px;margin-bottom:4px"></div>
+    <div id="shopList"></div>
+  </section>
+
+  <!-- ===== 9. 설정 / 저장 / 효과음 / 알림 ===== -->
+  <section id="settings" class="screen">
+    <h1>설정 ⚙️</h1>
+    <div class="card">
+      <b>👤 계정</b>
+      <div class="account-row">
+        <img id="avatarImg" class="account-avatar" alt="" referrerpolicy="no-referrer" style="display:none">
+        <div><b id="accountName"></b><br><small id="accountEmail"></small></div>
+      </div>
+      <p style="margin-top:10px"><small id="saveStatus">☁️ 서버에 자동 저장 중</small></p>
+      <button class="secondary" id="logoutBtn" type="button" style="margin-top:8px">로그아웃</button>
+    </div>
+    <div class="card">
+      <b>🔊 효과음</b>
+      <p>목표 완료, 출석 보상, 구매, 레벨 업 등에 치용 효과음이 나와용.</p>
+      <label style="display:flex;align-items:center;gap:8px;margin:10px 0;cursor:pointer">
+        <input type="checkbox" id="soundToggle" style="width:18px;height:18px" checked>
+        <span>효과음 켜기</span>
+      </label>
+      <button class="secondary" id="testSoundBtn" type="button" style="margin-top:4px">효과음 테스트 🎵</button>
+    </div>
+    <div class="card">
+      <b>🌙 다크 모드</b>
+      <p>눈이 편안한 어두운 테마로 바꿔봐용. 설정은 자동 저장돼용.</p>
+      <div class="theme-setting-row">
+        <div class="theme-toggle-wrap">
+          <label class="theme-toggle" id="themeToggle" for="darkModeToggle" aria-label="라이트 모드와 다크 모드 전환">
+            <input type="checkbox" id="darkModeToggle">
+            <span class="theme-track" aria-hidden="true">
+              <span class="theme-sky-glow"></span>
+              <span class="theme-cloud cloud-a"></span>
+              <span class="theme-cloud cloud-b"></span>
+              <span class="theme-cloud cloud-c"></span>
+              <span class="theme-stars">✦ · ✧ · ✦</span>
+              <span class="theme-orb">
+                <span class="theme-orb-core"></span>
+                <span class="theme-orb-shine"></span>
+                <span class="theme-orb-crater crater-a"></span>
+                <span class="theme-orb-crater crater-b"></span>
+              </span>
+            </span>
+          </label>
+          <div class="theme-mode-copy">
+            <b id="themeModeTitle">☀️ 라이트 모드</b>
+            <small id="themeModeHint">햇살처럼 밝게 사용해용</small>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <b>🔔 목표 리마인드</b>
+      <p>탭이 열려 있거나 백그라운드에 있을 때 치용이가 알려줘용.<br><small>※ 탭을 완전히 닫으면 알림이 가지 않아용.</small></p>
+      <label style="display:flex;align-items:center;gap:8px;margin:10px 0;cursor:pointer">
+        <input type="checkbox" id="remindToggle" style="width:18px;height:18px">
+        <span>리마인드 켜기</span>
+      </label>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+        <span style="font-size:13px;color:var(--muted)">시간</span>
+        <input type="time" id="remindTime" value="20:00" style="width:auto;padding:8px 12px;margin:0">
+      </div>
+      <button class="secondary" id="testRemindBtn" type="button" style="margin-top:10px">테스트 알림 보내기</button>
+      <div class="error" id="remindError" style="min-height:0"></div>
+    </div>
+    <div class="card">
+      <b>📱 홈 화면에 추가</b>
+      <p>브라우저 메뉴 → "홈 화면에 추가" 하면 앱처럼 쓸 수 있어용.</p>
+    </div>
+    <div class="card">
+      <b>🧹 데이터 초기화</b>
+      <p>모든 목표와 기록이 사라져요.</p>
+      <button class="secondary" id="resetBtn" type="button">처음부터 다시 시작</button>
+    </div>
+  </section>
+
+  <nav id="nav">
+    <button class="navbtn" data-go="home" type="button">🏠<br>오늘</button>
+    <button class="navbtn" data-go="add" type="button">＋<br>목표</button>
+    <button class="navbtn" data-go="duck" type="button">🦆<br>치용</button>
+    <button class="navbtn" data-go="shop" type="button">🛒<br>상점</button>
+    <button class="navbtn" data-go="settings" type="button">⚙️<br>설정</button>
+  </nav>
+
+  <!-- ===== 미션 완료 보상 모달 ===== -->
+  <div id="modal" class="modal">
+    <div class="modalbox">
+      <h1>🎉 해냈다용!</h1>
+      <p>치용이 정말 기뻐하고 있어용!</p>
+      <b id="modalGemText">💎 +20 보석</b>
+      <button class="primary" id="closeModal" type="button">계속 해봐용!</button>
+    </div>
+  </div>
+
+  <!-- ===== 레벨 업 모달 ===== -->
+  <div id="levelModal" class="modal">
+    <div class="modalbox">
+      <h1>⬆️ 레벨 업!</h1>
+      <p id="levelUpText">치용이 성장했어용!</p>
+      <b id="levelUpLv">Lv. 2</b>
+      <p id="levelUpName" style="margin-top:8px;color:var(--muted)"></p>
+      <button class="primary" id="closeLevelModal" type="button">멋져용!</button>
+    </div>
+  </div>
+
+  <!-- ===== 월간 출석 보상 모달 ===== -->
+  <div id="dailyModal" class="modal">
+    <div class="modalbox daily-modalbox">
+      <div class="daily-kicker">★ 오늘도 해봐용 출석 체크 ★</div>
+      <h1 id="dailyTitle">🎁 이번 달 출석 보상!</h1>
+      <p id="dailyText" class="daily-subtitle">이번 달의 모든 날짜에 출석하며 보석과 다양한 선물을 모아봐용!</p>
+      <div class="daily-progress-wrap">
+        <div class="daily-progress-label"><span id="dailyProgressDay">DAY 1 / 이번 달</span><span id="dailyProgressPct">0%</span></div>
+        <div class="daily-progress"><i id="dailyProgressBar"></i></div>
+      </div>
+      <div id="monthlySpecial" class="monthly-special"></div>
+      <div class="daily-board">
+        <div id="dailyWindowNote" class="daily-window-note">출석 보상 일부 표시</div>
+        <div id="dailyTrack" class="daily-track"></div>
+      </div>
+      <div class="daily-big-reward" id="dailyReward">🎁 오늘 보상</div>
+      <p id="dailyExtra" style="margin:6px 0 0;color:rgba(255,255,255,.9);font-size:13px"></p>
+      <button class="primary" id="closeDailyModal" type="button">확인!</button>
+    </div>
+  </div>
+  <div id="toast" role="status" aria-live="polite"></div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  // =====================================================================
+  // ★ Supabase 연결 — 이 두 줄만 내 프로젝트 값으로 바꾸면 돼용
+  //   (Supabase 대시보드 → 상단 Connect 버튼, 또는 Project Settings → Data API / API Keys)
+  // =====================================================================
+  const SUPABASE_URL = 'https://vitqssdrqiljvixlkgbf.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpdHFzc2RycWlsanZpeGxrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1NjI2ODIsImV4cCI6MjEwNDEzODY4Mn0.8VvPBUQeDFCkpUJyA3XzNuBvT83_B9vu9dKMpmUpz9A';
+
+  var sb = null;
+  try {
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }
+    });
+  } catch (e) {}
+
+  // 목표·보석·경험치·연속기록·꾸미기·출석은 전부 서버(Supabase)에 저장돼용.
+  // 이 기기에만 저장하는 건 효과음·다크 모드·리마인드 같은 "기기 설정"뿐이에용.
+  const PREFS_KEY = 'haebwayong_prefs';
+  const KIND_TO_TYPE = { must: '해야 할 일', want: '하고 싶은 일' };
+  const TYPE_TO_KIND = { '해야 할 일': 'must', '하고 싶은 일': 'want' };
+  // 레벨 계산이 비정상적으로 큰 숫자에서도 멈추지 않도록 제한해용 (학생 코드에서 사용)
+  const MAX_SAFE_GAME_POINTS = 9007199254740991;
+
+  var currentUser = null;
+  var busy = false;          // 서버 요청 중 중복 클릭 방지
+  var handledUserId;         // 같은 로그인 이벤트를 두 번 처리하지 않도록
+
+  // ===== 초기 상태 =====
+  function fresh() {
+    return {
+      started: false,        // = 서버의 onboarded (첫 목표를 만들었는지)
+      type: '',
+      tasks: [],             // [{ id, text, type, done }]
+      gems: 0,
+      xp: 0,
+      streak: 0,
+      skin: 'default',
+      ownedSkins: ['default'],
+      hat: 'none',
+      ownedHats: ['none'],
+      displayName: '',
+      avatarUrl: '',
+      email: '',
+      // ↓ 기기 설정
+      soundOn: true,
+      darkMode: false,
+      remindOn: false,
+      remindHour: 20,
+      remindMin: 0,
+      lastRemindDate: ''
+    };
+  }
+
+  let state = fresh();
+  loadPrefs();
+
+  function loadPrefs() {
+    try {
+      var p = JSON.parse(localStorage.getItem(PREFS_KEY) || 'null');
+      if (!p || typeof p !== 'object') return;
+      state.soundOn = p.soundOn !== false;
+      state.darkMode = !!p.darkMode;
+      state.remindOn = !!p.remindOn;
+      var h = Number(p.remindHour), m = Number(p.remindMin);
+      state.remindHour = isFinite(h) ? Math.min(23, Math.max(0, Math.floor(h))) : 20;
+      state.remindMin = isFinite(m) ? Math.min(59, Math.max(0, Math.floor(m))) : 0;
+      state.lastRemindDate = p.lastRemindDate || '';
+    } catch (e) {}
+  }
+
+  // 기기 설정만 저장 (게임 데이터는 서버 함수가 바로 저장해용)
+  function save() {
+    try {
+      localStorage.setItem(PREFS_KEY, JSON.stringify({
+        soundOn: state.soundOn,
+        darkMode: state.darkMode,
+        remindOn: state.remindOn,
+        remindHour: state.remindHour,
+        remindMin: state.remindMin,
+        lastRemindDate: state.lastRemindDate
+      }));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // ===== 서버 데이터 → 화면용 state =====
+  function applyServer(data) {
+    var p = data.profile || {};
+    state.started = !!p.onboarded;
+    state.gems = Number(p.gems) || 0;
+    state.xp = Number(p.xp) || 0;
+    state.streak = Number(p.streak) || 0;
+    state.skin = p.skin || 'default';
+    state.hat = p.hat || 'none';
+    state.displayName = p.display_name || '';
+    state.avatarUrl = p.avatar_url || '';
+    state.ownedSkins = Array.isArray(data.owned_skins) ? data.owned_skins : ['default'];
+    state.ownedHats = Array.isArray(data.owned_hats) ? data.owned_hats : ['none'];
+    state.tasks = (data.tasks || []).map(function(t) {
+      return { id: t.id, text: t.text, type: KIND_TO_TYPE[t.kind] || '', done: !!t.done };
+    });
+    // 가격은 서버 값이 정답 (앱에 적힌 가격과 다르면 서버 값으로 표시)
+    var prices = data.prices || {};
+    SKINS.forEach(function(s) { if (prices['skin:' + s.id] != null) s.price = prices['skin:' + s.id]; });
+    HATS.forEach(function(h) { if (prices['hat:' + h.id] != null) h.price = prices['hat:' + h.id]; });
+  }
+
+  async function refresh() {
+    var res = await sb.rpc('get_state');
+    if (res.error) throw res.error;
+    applyServer(res.data);
+  }
+
+  function errMsg(e) {
+    var m = (e && (e.message || e.error_description)) || String(e);
+    try { console.warn('[해봐용]', m); } catch (e2) {}
+    if (/fetch|network|Load failed/i.test(m)) return '인터넷 연결을 확인해줘용 📶';
+    if (/JWT|not authenticated/i.test(m)) return '로그인이 만료됐어용. 다시 로그인해줘용!';
+    return '문제가 생겼어용 😢 잠시 후 다시 해봐용';
+  }
+
+  function toast(msg) {
+    var t = document.getElementById('toast');
+    if (!t) return;
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function() { t.classList.remove('show'); }, 2000);
+  }
+
+  // 앱으로 돌아올 때(다음 날 포함) 최신 데이터로 새로고침 → 날짜가 바뀌면 목표 체크가 자동으로 풀려용
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden || !currentUser || busy) return;
+    refresh().then(function() {
+      var active = document.querySelector('.screen.active');
+      if (active && (active.id === 'home' || active.id === 'duck')) render();
+      if (active && active.id === 'shop') renderShop();
+      return processDailyLogin();
+    }).then(function(bonus) {
+      if (bonus) { showDailyBonus(bonus); render(); }
+    }).catch(function() {});
+  });
+  function todayStr() { return new Date().toDateString(); }
+  function yesterdayStr() {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toDateString();
+  }
+  function dateKey(d) {
+    d = d || new Date();
+    return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate());
+  }
+  function parseDateKey(key) {
+    if (!key) return null;
+    // support old toDateString or YYYY-M-D
+    var p = String(key).split('-');
+    if (p.length >= 3 && !isNaN(Number(p[0]))) {
+      return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+    }
+    var t = new Date(key);
+    return isNaN(t.getTime()) ? null : t;
+  }
+  // 레벨: 다음 레벨에 필요한 XP가 점점 늘어나요 (20, 25, 30, ...).
+  // 누적 합 공식으로 계산해 비정상적인 저장값에서도 느린 반복문에 빠지지 않게 해용.
+  function xpForLevel(lv) {
+    if (lv <= 1) return 0;
+    var n = lv - 1;
+    return 2.5 * n * (n + 7); // 20, 45, 75, 110 ...
+  }
+  function currentXp() {
+    var xp = Number(state.xp);
+    if (!isFinite(xp) || xp < 0) return 0;
+    return Math.min(MAX_SAFE_GAME_POINTS, xp);
+  }
+  function calcLevel() {
+    var xp = currentXp();
+    // xp = 2.5*n*(n+7)을 풀어 예상 레벨을 바로 구한 뒤 경계 오차만 보정해용.
+    var lv = Math.max(1, Math.floor((Math.sqrt(49 + 1.6 * xp) - 5) / 2));
+    while (xpForLevel(lv + 1) <= xp) lv++;
+    while (lv > 1 && xpForLevel(lv) > xp) lv--;
+    return lv;
+  }
+  function levelProgress() {
+    var xp = currentXp();
+    var lv = calcLevel();
+    var cur = xpForLevel(lv);
+    var next = xpForLevel(lv + 1);
+    var need = next - cur;
+    var have = Math.max(0, xp - cur);
+    var pct = need ? Math.min(100, Math.round((have / need) * 100)) : 100;
+    return { level: lv, have: have, need: need, pct: pct, nextTotal: next };
+  }
+  function levelTitle(lv) {
+    var titles = [
+      '', '알에서 나온 치용', '아기 치용', '튼튼 치용', '씩씩한 치용',
+      '멋진 치용', '용감한 치용', '전설의 치용', '우주 치용', '전설 속 치용'
+    ];
+    if (lv < titles.length) return titles[lv];
+    return '전설 Lv.' + lv + ' 치용';
+  }
+
+  function pendingCount() {
+    var n = 0;
+    for (var i = 0; i < state.tasks.length; i++) {
+      if (!state.tasks[i].done) n++;
+    }
+    return n;
+  }
+
+  function canNotify() {
+    return typeof Notification !== 'undefined' && Notification.permission === 'granted';
+  }
+
+  function sendRemind(force) {
+    if (!state.remindOn && !force) return;
+    if (!canNotify()) return;
+    var left = pendingCount();
+    var title = '치용 🦆';
+    var body;
+    if (!state.started || state.tasks.length === 0) {
+      body = '치용이가 기다리고 있어용. 오늘 목표 하나만 만들어봐용!';
+    } else if (left === 0) {
+      body = '오늘 목표 다 해냈어용! 내일도 꼭 와용 🎉';
+    } else {
+      body = '목표 ' + left + '개 남았어용. 안 하면 연속 기록이 끊겨용! 🌱';
+    }
+    try {
+      var n = new Notification(title, {
+        body: body,
+        tag: 'haebwayong-remind',
+        silent: false
+      });
+      n.onclick = function() {
+        window.focus();
+        n.close();
+      };
+    } catch (e) {}
+  }
+
+  function checkScheduledRemind() {
+    if (!state.remindOn || !canNotify()) return;
+    if (!state.started) return;
+    var now = new Date();
+    var today = now.toDateString();
+    if (state.lastRemindDate === today) return;
+    if (now.getHours() > state.remindHour ||
+        (now.getHours() === state.remindHour && now.getMinutes() >= state.remindMin)) {
+      // only if there are incomplete tasks
+      if (pendingCount() > 0) {
+        sendRemind(false);
+        state.lastRemindDate = today;
+        save();
+      }
+    }
+  }
+
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+
+  var SKINS = [
+    { id: 'default', name: '기본 치용', price: 0, desc: '처음 만난 치용' },
+    { id: 'mint', name: '민트 치용', price: 30, desc: '상큼한 민트색' },
+    { id: 'pink', name: '핑크 치용', price: 40, desc: '말랑 핑크' },
+    { id: 'night', name: '밤하늘 치용', price: 60, desc: '조용한 밤 느낌' },
+    { id: 'gold', name: '황금 치용', price: 100, desc: '반짝 황금' },
+    { id: 'rainbow', name: '무지개 치용', price: 150, desc: '전설의 색깔' }
+  ];
+
+  var HATS = [
+    { id: 'none', name: '맨머리 치용', price: 0, desc: '깔끔하게 기본 모습', icon: '🦆' },
+    { id: 'beanie', name: '포근 털모자', price: 70, desc: '따뜻하고 포근한 빨간 모자', icon: '🧶' },
+    { id: 'crown', name: '반짝 왕관', price: 120, desc: '오늘의 주인공은 치용!', icon: '👑' },
+    { id: 'party', name: '파티 고깔모자', price: 180, desc: '신나는 날엔 파티 모자', icon: '🎉' },
+    { id: 'wizard', name: '마법사 모자', price: 260, desc: '신비로운 치용으로 변신', icon: '🧙' },
+    { id: 'beret', name: '초록 베레모', price: 400, desc: '귀여운 예술가 치용', icon: '🧢' }
+  ];
+
+  
+  // 매달 마지막 날에 받을 수 있는 월간 한정 장신구
+  var MONTHLY_ACCESSORIES = [
+    { id: 'season-01', exclusiveMonthly: true, month: 1, name: '새해 복주머니 장식', desc: '새해 복이 톡톡 들어오는 복주머니', icon: '🧧' },
+    { id: 'season-02', exclusiveMonthly: true, month: 2, name: '하트 초콜릿 머리띠', desc: '달콤한 하트 초콜릿으로 꾸민 장식', icon: '🍫' },
+    { id: 'season-03', exclusiveMonthly: true, month: 3, name: '벚꽃 화관', desc: '분홍 벚꽃이 한가득 피어난 화관', icon: '🌸' },
+    { id: 'season-04', exclusiveMonthly: true, month: 4, name: '튤립 리본 장식', desc: '알록달록 튤립과 리본이 살랑살랑', icon: '🌷' },
+    { id: 'season-05', exclusiveMonthly: true, month: 5, name: '클로버 머리핀', desc: '행운을 가득 담은 네잎클로버 장식', icon: '🍀' },
+    { id: 'season-06', exclusiveMonthly: true, month: 6, name: '비 오는 날 우산핀', desc: '톡톡 떨어지는 빗방울을 닮은 우산 장식', icon: '☂️' },
+    { id: 'season-07', exclusiveMonthly: true, month: 7, name: '수박 머리띠', desc: '시원하고 달콤한 여름 수박 장식', icon: '🍉' },
+    { id: 'season-08', exclusiveMonthly: true, month: 8, name: '바다 조개 왕관', desc: '반짝이는 조개와 진주로 만든 여름 왕관', icon: '🐚' },
+    { id: 'season-09', exclusiveMonthly: true, month: 9, name: '가을 들꽃 화관', desc: '가을 들판의 작은 꽃을 모은 화관', icon: '🌾' },
+    { id: 'season-10', exclusiveMonthly: true, month: 10, name: '꼬마 호박 장식', desc: '가을 축제에 어울리는 말랑 호박 장식', icon: '🎃' },
+    { id: 'season-11', exclusiveMonthly: true, month: 11, name: '단풍잎 브로치', desc: '붉고 노랗게 물든 단풍잎 장식', icon: '🍁' },
+    { id: 'season-12', exclusiveMonthly: true, month: 12, name: '눈꽃 겨울 리스', desc: '눈꽃과 겨울 열매로 꾸민 포근한 리스', icon: '❄️' }
+  ];
+
+  function monthlyAccessoryFor(date) {
+    var month = (date || new Date()).getMonth() + 1;
+    // 1월부터 12월까지 모든 달에 하나씩 존재하는 월말 한정 장신구를 선택해용.
+    for (var i = 0; i < MONTHLY_ACCESSORIES.length; i++) {
+      if (MONTHLY_ACCESSORIES[i].month === month) return MONTHLY_ACCESSORIES[i];
+    }
+    // 혹시 데이터가 잘못되어도 앱이 멈추지 않도록 기본 장신구로 안전하게 처리해용.
+    return MONTHLY_ACCESSORIES[0];
+  }
+
+  function lastDayOfMonth(date) {
+    var d = date || new Date();
+    return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  }
+
+  function monthKey(date) {
+    var d = date || new Date();
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1);
+  }
+
+  function findSkin(id) {
+    for (var i = 0; i < SKINS.length; i++) if (SKINS[i].id === id) return SKINS[i];
+    return null;
+  }
+
+  // ===== 월간 출석 보상표 (화면 표시용) =====
+  // 실제 지급은 서버 함수 claim_daily_login 이 해요. 보상을 바꾸려면 schema.sql 의 c_rewards 도 같이 바꿔야 해용.
+  var DAILY_REWARDS = [
+    { icon:'💎', label:'20 보석' }, { icon:'💎', label:'25 보석' }, { icon:'💎', label:'30 보석' },
+    { icon:'🎁', label:'35 보석' }, { icon:'🧢', label:'모자 선물' }, { icon:'💎', label:'45 보석' },
+    { icon:'⭐', label:'60 보석' }, { icon:'🎨', label:'스킨 선물' }, { icon:'💎', label:'50 보석' },
+    { icon:'🧢', label:'모자 선물' }, { icon:'💎', label:'70 보석' }, { icon:'💎', label:'80 보석' },
+    { icon:'🎁', label:'60 보석' }, { icon:'🧢', label:'모자 선물' }, { icon:'💎', label:'90 보석' },
+    { icon:'💎', label:'70 보석' }, { icon:'🎨', label:'스킨 선물' }, { icon:'💎', label:'100 보석' },
+    { icon:'💎', label:'80 보석' }, { icon:'🧢', label:'모자 선물' }, { icon:'💎', label:'120 보석' },
+    { icon:'🎁', label:'90 보석' }, { icon:'🎨', label:'스킨 선물' }, { icon:'💎', label:'140 보석' },
+    { icon:'🧢', label:'모자 선물' }, { icon:'💎', label:'110 보석' }, { icon:'💎', label:'140 보석' },
+    { icon:'🎨', label:'스킨 선물' }, { icon:'💎', label:'170 보석' }, { icon:'💎', label:'300 보석' },
+    { icon:'🏆', label:'350 보석' }
+  ];
+
+  // ===== 월간 출석 처리 =====
+  // 서버가 보상을 지급하고(하루 1번), 여기서는 결과를 학생이 만든 문구로 바꿔서 모달에 보여줘용.
+  async function processDailyLogin() {
+    if (!state.started || !sb || !currentUser) return null;
+    var res = await sb.rpc('claim_daily_login');
+    if (res.error) { try { console.warn(res.error); } catch (e) {} return null; }
+    var r = res.data;
+    if (!r) return null;   // 오늘은 이미 출석함
+
+    var title = '🎁 이번 달 출석 보상!';
+    var text = '이번 달의 모든 날짜에 출석하며 보석과 다양한 선물을 모아봐용!';
+    var extra = '';
+    if (r.mode === 'month_done') {
+      title = '🏆 이번 달 출석 완료!';
+      text = '이번 달 출석 보상을 모두 모았어용!';
+      extra = '월말 한정 장신구가 있다면 마지막 날에 받을 수 있어용.';
+    } else if (r.mode === 'comeback') {
+      title = '🦆 다시 왔용!';
+      text = r.gap + '일 만에 돌아왔어용. 월간 출석 보상은 이어서 받을 수 있어용!';
+      extra = '연속 기록은 다시 1일부터 시작하지만 월간 출석은 유지해용.';
+    } else if (r.mode === 'new_month') {
+      title = '🌱 새 달이 시작됐어용!';
+      text = '이번 달 출석 보상을 새로 모아봐용.';
+      extra = '새로운 달의 1일차 보상이야용!';
+    }
+
+    var parts = [];
+    if (r.daily_granted && r.reward) {
+      if (r.reward.indexOf('gem:') === 0) {
+        parts.push('💎 +' + r.reward.split(':')[1] + ' 보석');
+      } else if (r.gift) {
+        var isHat = r.gift.type === 'hat';
+        if (r.gift.id) {
+          var item = isHat ? findHat(r.gift.id) : findSkin(r.gift.id);
+          parts.push((isHat ? '🧢 ' : '🎨 ') + (item ? item.name : r.gift.id) + ' 획득!');
+          extra = isHat ? '새 모자를 선물로 받았어용!' : '새 스킨을 선물로 받았어용!';
+        } else {
+          parts.push('💎 +' + r.gift.gems);
+          extra = isHat ? '모자가 모두 있어서 보석으로 바꿔줬어용!' : '스킨을 모두 가지고 있어서 보석으로 바꿔줬어용!';
+        }
+      }
+    }
+
+    var acc = MONTHLY_ACCESSORIES[(Number(r.month) || 1) - 1] || MONTHLY_ACCESSORIES[0];
+    if (r.monthly) {
+      if (r.monthly.duplicate) {
+        parts.push('💎 +200');
+        extra = '이달의 장신구를 이미 가지고 있어서 보석 200개로 받았어용!';
+      } else {
+        parts.push(acc.icon + ' ' + acc.name + ' 획득!');
+        extra = '이번 달 마지막 날 한정 장신구야용! 다음 달에는 새로운 장신구가 나와용.';
+      }
+      title = '🌟 월말 특별 보상!';
+      text = acc.name + '와 오늘의 출석 보상을 모두 획득했어용!';
+    }
+    if (r.month_complete && !r.daily_granted && !r.monthly) parts.push('✅ 이달 출석 완료');
+
+    if (r.is_month_end) {
+      extra = (extra ? extra + ' ' : '') + '이번 달 마지막 날 출석 완료! 다음 달에 새로운 장신구가 기다리고 있어용.';
+    } else if (r.month_complete && !r.daily_granted) {
+      extra = extra || '이번 달 출석 보상을 모두 획득했어용!';
+    } else if (!extra) {
+      extra = 'DAY ' + r.day + ' / ' + r.days_in_month + ' · 다음 보상도 챙겨가용!';
+    }
+
+    try { await refresh(); } catch (e) {}
+
+    return {
+      title: title,
+      text: text,
+      rewardText: parts.join('  +  ') || '✅ 오늘 출석 완료',
+      extra: extra,
+      day: r.day,
+      daysInMonth: r.days_in_month,
+      rewards: DAILY_REWARDS.slice(0, r.days_in_month),
+      monthlyAccessory: acc,
+      isCalendarMonthEnd: !!r.is_month_end,
+      monthlyClaimed: !!r.monthly_claimed,
+      monthComplete: !!r.month_complete,
+      dailyRewardGranted: !!r.daily_granted
+    };
+  }
+
+  function updateNudge() {
+    var card = document.getElementById('nudgeCard');
+    var title = document.getElementById('nudgeTitle');
+    var text = document.getElementById('nudgeText');
+    if (!card || !title || !text) return;
+    card.style.borderColor = '';
+
+    var left = 0;
+    for (var i = 0; i < state.tasks.length; i++) {
+      if (!state.tasks[i].done) left++;
+    }
+    var total = state.tasks.length;
+    var done = total - left;
+    var msg = null;
+    var head = '치용 메시지';
+
+    if (total === 0) {
+      head = '🌱 시작이 반이야용';
+      msg = '목표 하나만 적으면 오늘도 성공한 거야용!';
+    } else if (left > 0 && done === 0) {
+      head = '🔥 연속 기록이 위험해용';
+      msg = '아직 완료한 목표가 없어용. 가장 쉬운 거 하나만 해봐용!';
+    } else if (left === 1) {
+      head = '거의 다 왔어용';
+      msg = '목표 1개만 더 하면 오늘 클리어야용!';
+    } else if (left > 1) {
+      head = '치용이 응원해용';
+      msg = '남은 목표 ' + left + '개. 하나씩만 해봐용 💪';
+    } else if (total > 0 && left === 0) {
+      head = '🎉 오늘 완벽해용';
+      msg = '전부 해냈어용! 내일도 같이 해봐용';
+      card.style.borderColor = 'var(--green)';
+    }
+
+    if (msg) {
+      card.style.display = 'block';
+      title.textContent = head;
+      text.textContent = msg;
+    } else {
+      card.style.display = 'none';
+    }
+  }
+
+
+  // ===== 다크 모드 적용 =====
+  // 저장된 설정을 앱/페이지에 반영하고 브라우저 주소 영역의 테마 색도 맞춥니다.
+  function applyTheme() {
+    var app = document.querySelector('.app');
+    if (app) app.classList.toggle('dark', !!state.darkMode);
+    if (document.body) document.body.classList.toggle('theme-dark', !!state.darkMode);
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', state.darkMode ? '#17191d' : '#fffaf1');
+    var tog = document.getElementById('darkModeToggle');
+    if (tog) tog.checked = !!state.darkMode;
+    var themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) themeToggle.classList.toggle('is-dark', !!state.darkMode);
+    var themeModeTitle = document.getElementById('themeModeTitle');
+    var themeModeHint = document.getElementById('themeModeHint');
+    if (themeModeTitle) themeModeTitle.textContent = state.darkMode ? '🌙 다크 모드' : '☀️ 라이트 모드';
+    if (themeModeHint) themeModeHint.textContent = state.darkMode ? '차분한 밤하늘 테마로 사용해용' : '햇살처럼 밝게 사용해용';
+  }
+
+  // ===== 현재 스킨/모자 적용 =====
+  // 화면에 존재하는 모든 치용 요소의 외형 클래스를 동기화합니다.
+  function applySkin() {
+    var ducks = document.querySelectorAll('.duck:not(.shop-duck)');
+    for (var i = 0; i < ducks.length; i++) {
+      var d = ducks[i];
+      var classes = d.className.split(/\s+/);
+      var kept = [];
+      for (var j = 0; j < classes.length; j++) {
+        if (classes[j] && classes[j].indexOf('skin-') !== 0 && classes[j].indexOf('hat-') !== 0) kept.push(classes[j]);
+      }
+      kept.push('skin-' + (state.skin || 'default'));
+      kept.push('hat-' + (state.hat || 'none'));
+      d.className = kept.join(' ');
+
+      var hatEl = d.querySelector('.hat');
+      if (hatEl) {
+        var hatClasses = hatEl.className.split(/\s+/);
+        var hatKept = [];
+        for (var k = 0; k < hatClasses.length; k++) {
+          if (hatClasses[k] && hatClasses[k].indexOf('hat-') !== 0) hatKept.push(hatClasses[k]);
+        }
+        hatKept.push('hat');
+        hatKept.push('hat-' + (state.hat || 'none'));
+        hatEl.className = hatKept.join(' ');
+      }
+    }
+  }
+
+  // ===== 상점 화면 렌더링 =====
+  // 구매/착용 가능 여부와 보유 보석을 기준으로 상품 카드를 다시 만듭니다.
+  function renderShop() {
+    var box = document.getElementById('shopList');
+    var gemsEl = document.getElementById('shopGems');
+    state.gems = Math.max(0, Number(state.gems) || 0);
+    if (!Array.isArray(state.ownedSkins)) state.ownedSkins = ['default'];
+    if (!Array.isArray(state.ownedHats)) state.ownedHats = ['none'];
+    if (state.ownedHats.indexOf('none') < 0) state.ownedHats.unshift('none');
+    if (gemsEl) gemsEl.textContent = state.gems;
+    if (!box) return;
+    box.innerHTML = '';
+
+    var msg = document.getElementById('shopMsg');
+
+    var skinTitle = document.createElement('h3');
+    skinTitle.textContent = '🎨 치용 스킨';
+    box.appendChild(skinTitle);
+
+    for (var i = 0; i < SKINS.length; i++) {
+      var skin = SKINS[i];
+      var owned = state.ownedSkins.indexOf(skin.id) >= 0;
+      var eq = state.skin === skin.id;
+      var item = document.createElement('div');
+      item.className = 'shop-item' + (eq ? ' equipped' : '');
+      item.setAttribute('data-skin-id', skin.id);
+
+      var preview = document.createElement('div');
+      preview.className = 'shop-duck duck skin-' + skin.id + ' hat-' + (state.hat || 'none');
+      preview.innerHTML = '<div class="body"></div><div class="head"></div><div class="cap"></div><div class="hat hat-' + (state.hat || 'none') + '"></div><div class="eye"></div><div class="beak"></div><div class="foot f1"></div><div class="foot f2"></div>';
+
+      var info = document.createElement('div');
+      info.className = 'shop-info';
+      var priceText = skin.price ? (' · 💎 ' + skin.price) : ' · 무료';
+      info.innerHTML = '<b>' + skin.name + '</b><small>' + skin.desc + priceText + '</small>';
+
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.setAttribute('data-action', eq ? 'equipped' : (owned ? 'equip' : 'buy'));
+      btn.setAttribute('data-skin-id', skin.id);
+      if (eq) {
+        btn.textContent = '착용 중';
+        btn.disabled = true;
+        btn.className = 'owned';
+      } else if (owned) {
+        btn.textContent = '착용';
+        btn.className = 'owned';
+      } else {
+        btn.textContent = '구매';
+      }
+
+      item.appendChild(preview);
+      item.appendChild(info);
+      item.appendChild(btn);
+      box.appendChild(item);
+    }
+
+    var hatTitle = document.createElement('h3');
+    hatTitle.className = 'hat-shop-title';
+    hatTitle.textContent = '🧢 치용 모자';
+    box.appendChild(hatTitle);
+
+    var hatSub = document.createElement('p');
+    hatSub.textContent = '모자를 사서 치용에게 씌워봐용!';
+    box.appendChild(hatSub);
+
+    for (var h = 0; h < HATS.length; h++) {
+      var hat = HATS[h];
+      // 월간 한정 장신구는 일반 구매 목록에서 제외해용.
+      if (hat.exclusiveMonthly) continue;
+      var hatOwned = state.ownedHats.indexOf(hat.id) >= 0;
+      var hatEq = state.hat === hat.id;
+
+      var hatItem = document.createElement('div');
+      hatItem.className = 'shop-item' + (hatEq ? ' equipped' : '');
+      hatItem.setAttribute('data-hat-id', hat.id);
+
+      var hatPreview = document.createElement('div');
+      hatPreview.className = 'hat-preview';
+      hatPreview.innerHTML = '<span class="hat-symbol">' + hat.icon + '</span>';
+
+      var hatInfo = document.createElement('div');
+      hatInfo.className = 'shop-info';
+      var hatPriceText = hat.price ? (' · 💎 ' + hat.price) : ' · 무료';
+      hatInfo.innerHTML = '<b>' + hat.name + '</b><small>' + hat.desc + hatPriceText + '</small>';
+
+      var hatBtn = document.createElement('button');
+      hatBtn.type = 'button';
+      hatBtn.setAttribute('data-action', hatEq ? 'hat-equipped' : (hatOwned ? 'equipHat' : 'buyHat'));
+      hatBtn.setAttribute('data-hat-id', hat.id);
+      if (hatEq) {
+        hatBtn.textContent = '착용 중';
+        hatBtn.disabled = true;
+        hatBtn.className = 'owned';
+      } else if (hatOwned) {
+        hatBtn.textContent = '착용';
+        hatBtn.className = 'owned';
+      } else {
+        hatBtn.textContent = '구매';
+      }
+
+      hatItem.appendChild(hatPreview);
+      hatItem.appendChild(hatInfo);
+      hatItem.appendChild(hatBtn);
+      box.appendChild(hatItem);
+    }
+
+    // 이달의 마지막 날 전용 장신구
+    var seasonalTitle = document.createElement('h3');
+    seasonalTitle.className = 'hat-shop-title';
+    seasonalTitle.textContent = '🌟 월간 한정 장신구';
+    box.appendChild(seasonalTitle);
+
+    var seasonal = monthlyAccessoryFor(new Date());
+    var seasonalOwned = state.ownedHats.indexOf(seasonal.id) >= 0;
+    var seasonalEq = state.hat === seasonal.id;
+    var seasonalItem = document.createElement('div');
+    seasonalItem.className = 'shop-item' + (seasonalEq ? ' equipped' : '');
+    seasonalItem.setAttribute('data-hat-id', seasonal.id);
+
+    var seasonalPreview = document.createElement('div');
+    seasonalPreview.className = 'hat-preview';
+    seasonalPreview.innerHTML = '<span class="hat-symbol">' + seasonal.icon + '</span>';
+
+    var seasonalInfo = document.createElement('div');
+    seasonalInfo.className = 'shop-info';
+    seasonalInfo.innerHTML = '<b>' + seasonal.name + '</b><small>' + seasonal.desc + ' · 매달 마지막 날 출석 보상</small>';
+
+    var seasonalBtn = document.createElement('button');
+    seasonalBtn.type = 'button';
+    if (seasonalEq) {
+      seasonalBtn.textContent = '착용 중';
+      seasonalBtn.disabled = true;
+      seasonalBtn.className = 'owned';
+    } else if (seasonalOwned) {
+      seasonalBtn.textContent = '착용';
+      seasonalBtn.className = 'owned';
+      seasonalBtn.setAttribute('data-action', 'equipHat');
+      seasonalBtn.setAttribute('data-hat-id', seasonal.id);
+    } else {
+      seasonalBtn.textContent = '월말 출석 보상';
+      seasonalBtn.className = 'owned';
+      seasonalBtn.disabled = true;
+    }
+
+    seasonalItem.appendChild(seasonalPreview);
+    seasonalItem.appendChild(seasonalInfo);
+    seasonalItem.appendChild(seasonalBtn);
+    box.appendChild(seasonalItem);
+  }
+
+  function findHat(hatId) {
+    for (var i = 0; i < HATS.length; i++) {
+      if (HATS[i].id === hatId) return HATS[i];
+    }
+    for (var j = 0; j < MONTHLY_ACCESSORIES.length; j++) {
+      if (MONTHLY_ACCESSORIES[j].id === hatId) return MONTHLY_ACCESSORIES[j];
+    }
+    return null;
+  }
+
+  // ===== 상점 구매/착용 (서버 함수) =====
+  // 보석 부족·중복 구매·판매하지 않는 상품은 서버가 막아줘용.
+  async function shopAction(itemType, itemId, action) {
+    var msg = document.getElementById('shopMsg');
+    var item = itemType === 'hat' ? findHat(itemId) : findSkin(itemId);
+    if (!item || busy) return;
+    if (item.exclusiveMonthly && action === 'buy') {
+      if (msg) msg.textContent = '월간 한정 장신구는 출석으로만 받을 수 있어용.';
+      return;
+    }
+    busy = true;
+    try {
+      var res = action === 'buy'
+        ? await sb.rpc('buy_item', { p_type: itemType, p_id: itemId })
+        : await sb.rpc('equip_item', { p_type: itemType, p_id: itemId });
+      if (res.error) throw res.error;
+      var r = res.data || {};
+      if (!r.ok) {
+        if (msg) {
+          msg.textContent =
+            r.reason === 'not_enough' ? '보석이 부족해용! (보유 ' + r.gems + ' / 필요 ' + r.price + ')' :
+            r.reason === 'not_owned' ? (itemType === 'hat' ? '아직 소유하지 않은 모자야용.' : '아직 소유하지 않은 스킨이야용.') :
+            '지금은 살 수 없는 상품이야용.';
+        }
+        playSfx('error');
+        return;
+      }
+      await refresh();
+      applySkin();
+      try { render(); } catch (e) {}
+      renderShop();
+      if (action === 'buy' && !r.already_owned) {
+        if (msg) msg.textContent = item.name + ' 구매 완료! 💎 -' + r.price;
+        playSfx('buy');
+      } else {
+        if (msg) msg.textContent = itemType === 'hat' ? item.name + ' 씌웠어용! 🎩' : item.name + ' 착용했어용!';
+        playSfx('equip');
+      }
+    } catch (e) {
+      if (msg) msg.textContent = errMsg(e);
+      playSfx('error');
+    } finally {
+      busy = false;
+    }
+  }
+
+  // 아래 두 함수 이름은 학생 코드(상점 클릭 이벤트)에서 그대로 쓰여서 유지해용.
+  function buyOrEquipHat(hatId, action) {
+    return shopAction('hat', hatId, action === 'buyHat' ? 'buy' : 'equip');
+  }
+  function buyOrEquipSkin(skinId, action) {
+    return shopAction('skin', skinId, action === 'buy' ? 'buy' : 'equip');
+  }
+
+  // 일반 UI 클릭 효과음 (중복 재생을 피하기 위해 상점 액션은 제외)
+  if (!window.__soundClickBound) {
+    window.__soundClickBound = true;
+    document.addEventListener('click', function(e) {
+      var node = e.target;
+      while (node && node !== document.body && (!node.tagName || node.tagName.toLowerCase() !== 'button')) {
+        node = node.parentNode;
+      }
+      if (!node || node === document.body) return;
+      var action = node.getAttribute ? node.getAttribute('data-action') : null;
+      if (action === 'buy' || action === 'equip' || action === 'buyHat' || action === 'equipHat' ||
+          action === 'equipped' || action === 'hat-equipped' || node.id === 'testSoundBtn' ||
+          node.id === 'closeDailyModal') return;
+      if (node.id === 'logoutBtn' || node.id === 'startBtn' || node.id === 'typeNext' ||
+          node.id === 'createBtn' || node.id === 'saveAddBtn' || node.id === 'addBtn' ||
+          node.id === 'cancelAddBtn' || node.id === 'closeModal' || node.id === 'closeLevelModal' ||
+          node.id === 'resetBtn' || node.id === 'googleBtn' ||
+          node.id === 'testRemindBtn') {
+        playSfx('click');
+      }
+    });
+  }
+
+  // 상점 버튼 이벤트 (한 번만 등록)
+  if (!window.__shopClickBound) {
+    window.__shopClickBound = true;
+    document.addEventListener('click', function(e) {
+      var t = e.target;
+      if (!t || !t.getAttribute) return;
+      var action = t.getAttribute('data-action');
+      if (!action) return;
+      var sid = t.getAttribute('data-skin-id');
+      if (action === 'buy' || action === 'equip') {
+        if (!sid) return;
+        e.preventDefault();
+        e.stopPropagation();
+        buyOrEquipSkin(sid, action);
+        return;
+      }
+      var hid = t.getAttribute('data-hat-id');
+      if ((action === 'buyHat' || action === 'equipHat') && hid) {
+        e.preventDefault();
+        e.stopPropagation();
+        buyOrEquipHat(hid, action);
+      }
+    });
+  }
+
+  // ===== 치용 효과음 시스템 =====
+  var audioCtx = null;
+
+  // ===== 오디오 초기화 =====
+  // 브라우저가 사용자 입력 전에 AudioContext를 막는 경우를 고려합니다.
+  function initAudio() {
+    if (!state.soundOn) return null;
+    try {
+      if (!audioCtx) {
+        var Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return null;
+        audioCtx = new Ctx();
+      }
+      if (audioCtx.state === 'suspended' && audioCtx.resume) {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function tone(freq, duration, wave, volume, delay) {
+    var ctx = initAudio();
+    if (!ctx) return;
+    try {
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      var start = ctx.currentTime + (delay || 0);
+      var dur = Math.max(0.035, duration || 0.08);
+      var vol = Math.max(0.0001, (volume || 0.05) * 1.35);
+      osc.type = wave || 'sine';
+      osc.frequency.setValueAtTime(freq || 440, start);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(vol, start + 0.006);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(start);
+      osc.stop(start + dur + 0.025);
+    } catch (e) {}
+  }
+
+  // ===== 효과음 재생 =====
+  // 클릭/성공/보상/구매/레벨업별로 다른 음을 생성합니다.
+  function playSfx(type) {
+    if (!state.soundOn) return;
+    switch (type) {
+      case 'click':
+        tone(620, 0.055, 'triangle', 0.040, 0);
+        break;
+      case 'success':
+        tone(660, 0.075, 'triangle', 0.055, 0);
+        tone(830, 0.085, 'triangle', 0.060, 0.065);
+        tone(1046, 0.13, 'sine', 0.065, 0.135);
+        break;
+      case 'reward':
+        tone(659, 0.075, 'triangle', 0.055, 0);
+        tone(784, 0.075, 'triangle', 0.060, 0.065);
+        tone(988, 0.09, 'triangle', 0.065, 0.13);
+        tone(1318, 0.16, 'sine', 0.070, 0.205);
+        break;
+      case 'buy':
+        tone(587, 0.06, 'square', 0.038, 0);
+        tone(740, 0.075, 'triangle', 0.050, 0.055);
+        tone(988, 0.12, 'triangle', 0.060, 0.115);
+        break;
+      case 'equip':
+        tone(587, 0.065, 'sine', 0.042, 0);
+        tone(698, 0.075, 'triangle', 0.050, 0.065);
+        tone(880, 0.12, 'sine', 0.060, 0.135);
+        break;
+      case 'levelup':
+        tone(523, 0.075, 'triangle', 0.045, 0);
+        tone(659, 0.075, 'triangle', 0.055, 0.07);
+        tone(784, 0.075, 'triangle', 0.060, 0.14);
+        tone(988, 0.075, 'triangle', 0.065, 0.21);
+        tone(1318, 0.22, 'sine', 0.075, 0.28);
+        break;
+      case 'error':
+        tone(260, 0.09, 'square', 0.035, 0);
+        tone(208, 0.105, 'square', 0.030, 0.08);
+        break;
+      case 'close':
+        tone(520, 0.055, 'sine', 0.032, 0);
+        break;
+      default:
+        tone(520, 0.055, 'sine', 0.032, 0);
+    }
+  }
+
+  function syncSoundUI() {
+    var tog = document.getElementById('soundToggle');
+    if (tog) tog.checked = state.soundOn !== false;
+  }
+
+  function syncRemindUI() {
+    var tog = document.getElementById('remindToggle');
+    var tim = document.getElementById('remindTime');
+    if (tog) tog.checked = !!state.remindOn;
+    if (tim) tim.value = pad2(state.remindHour) + ':' + pad2(state.remindMin);
+  }
+
+  // 1분마다 예약 알림 체크 (탭이 살아 있을 때만)
+  setInterval(checkScheduledRemind, 60000);
+  // 페이지 다시 보일 때도 체크
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) checkScheduledRemind();
+  });
+
+  // ===== 화면 전환 =====
+  // 잘못된 화면 ID가 들어와도 홈/환영 화면으로 복구하도록 방어합니다.
+  function show(id) {
+    var screens = document.querySelectorAll('.screen');
+    for (var i = 0; i < screens.length; i++) {
+      screens[i].classList.remove('active');
+    }
+    var el = document.getElementById(id);
+    if (!el) {
+      id = state.started ? 'home' : 'welcome';
+      el = document.getElementById(id);
+    }
+    if (el) el.classList.add('active');
+
+    var nav = document.getElementById('nav');
+    if (nav) nav.style.display = state.started ? 'flex' : 'none';
+
+    var btns = document.querySelectorAll('.navbtn');
+    for (var j = 0; j < btns.length; j++) {
+      if (btns[j].getAttribute('data-go') === id) {
+        btns[j].classList.add('active');
+      } else {
+        btns[j].classList.remove('active');
+      }
+    }
+
+    if (id === 'home' || id === 'duck') render();
+    if (id === 'settings') {
+      syncRemindUI();
+      syncSoundUI();
+      updateSaveStatus();
+    }
+    if (id === 'shop') {
+      var shopMsg = document.getElementById('shopMsg');
+      if (shopMsg) shopMsg.textContent = '';
+      renderShop();
+    }
+    applySkin();
+    // 화면 이동 후에도 저장된 테마와 실제 UI가 일치하도록 매번 동기화해용.
+    applyTheme();
+  }
+
+  function updateSaveStatus() {
+    var nameEl = document.getElementById('accountName');
+    var emailEl = document.getElementById('accountEmail');
+    var img = document.getElementById('avatarImg');
+    var el = document.getElementById('saveStatus');
+    if (nameEl) nameEl.textContent = state.displayName || '치용 친구';
+    if (emailEl) emailEl.textContent = state.email || '';
+    if (img) {
+      if (state.avatarUrl) { img.src = state.avatarUrl; img.style.display = ''; }
+      else img.style.display = 'none';
+    }
+    if (el) {
+      el.textContent = '☁️ 서버에 자동 저장 중 · 목표 ' + state.tasks.length + '개 · 💎 ' + state.gems +
+        ' · Lv.' + calcLevel() + ' · 🔥 ' + state.streak + '일';
+    }
+  }
+
+  // ===== 홈/치용 화면 렌더링 =====
+  // 목표, 진행률, 레벨, 보석, 응원 메시지를 현재 state와 동기화합니다.
+  function render() {
+    var dateEl = document.getElementById('dateText');
+    if (dateEl) {
+      var now = new Date();
+      var weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+      dateEl.textContent =
+        now.getFullYear() + '년 ' +
+        (now.getMonth() + 1) + '월 ' +
+        now.getDate() + '일 (' + weekdays[now.getDay()] + ')';
+    }
+    var streakEl = document.getElementById('streak');
+    var gemsEl2 = document.getElementById('gems');
+    if (streakEl) streakEl.textContent = state.streak;
+    if (gemsEl2) gemsEl2.textContent = state.gems;
+    var currentHatEl = document.getElementById('currentHatName');
+    if (currentHatEl) {
+      var currentHat = findHat(state.hat || 'none');
+      currentHatEl.textContent = currentHat ? currentHat.name : '맨머리 치용';
+    }
+    var prog = levelProgress();
+    var levelEl = document.getElementById('level');
+    if (levelEl) levelEl.textContent = prog.level;
+    var xpNow = document.getElementById('xpNow');
+    var xpNext = document.getElementById('xpNext');
+    var levelBar = document.getElementById('levelBar');
+    var levelName = document.getElementById('levelName');
+    if (xpNow) xpNow.textContent = prog.have;
+    if (xpNext) xpNext.textContent = prog.need;
+    if (levelBar) levelBar.style.width = prog.pct + '%';
+    if (levelName) levelName.textContent = levelTitle(prog.level);
+    var homeLevel = document.getElementById('homeLevel');
+    if (homeLevel) homeLevel.textContent = prog.level;
+
+    var box = document.getElementById('tasks');
+    if (!box) {
+      updateNudge();
+      return;
+    }
+    box.innerHTML = '';
+
+    if (state.tasks.length === 0) {
+      box.innerHTML = '<div class="card empty-card">아직 목표가 없어용 🌱<br><small>작은 것부터 시작해봐용!</small></div>';
+    } else {
+      for (var i = 0; i < state.tasks.length; i++) {
+        (function(idx) {
+          var t = state.tasks[idx];
+          var d = document.createElement('div');
+          d.className = 'task' + (t.done ? ' done' : '');
+
+          var check = document.createElement('span');
+          check.className = 'check';
+          check.textContent = t.done ? '✓' : '';
+
+          var txt = document.createElement('span');
+          txt.className = 'txt';
+          txt.appendChild(document.createTextNode(t.text));
+          txt.appendChild(document.createElement('br'));
+          var sm = document.createElement('small');
+          sm.textContent = t.type || '';
+          txt.appendChild(sm);
+
+          var delBtn = document.createElement('button');
+          delBtn.className = 'delete';
+          delBtn.type = 'button';
+          delBtn.textContent = '×';
+          delBtn.onclick = function(e) {
+            e.stopPropagation();
+            if (busy || !confirm('이 목표를 삭제할까요?')) return;
+            busy = true;
+            // 진짜 삭제 대신 숨김 처리 → 완료 기록·연속기록은 그대로 남아요
+            sb.from('tasks').update({ archived_at: new Date().toISOString() }).eq('id', t.id)
+              .then(function(res) { if (res.error) throw res.error; return refresh(); })
+              .then(function() { render(); })
+              .catch(function(err) { toast(errMsg(err)); })
+              .then(function() { busy = false; });
+          };
+
+          d.appendChild(check);
+          d.appendChild(txt);
+          d.appendChild(delBtn);
+          d.onclick = function() { toggle(idx); };
+          box.appendChild(d);
+        })(i);
+      }
+    }
+
+    var done = 0;
+    for (var k = 0; k < state.tasks.length; k++) {
+      if (state.tasks[k].done) done++;
+    }
+    var total = state.tasks.length;
+    var pct = total ? Math.round((done / total) * 100) : 0;
+
+    var _pt=document.getElementById('progressText'); if(_pt) _pt.textContent =
+      total ? (total + '개 중 ' + done + '개 완료했어용!') : '새로운 목표를 만들어봐용!';
+    var _pb=document.getElementById('progressBar'); if(_pb) _pb.style.width = pct + '%';
+
+    var msg = '천천히 시작해봐용!';
+    if (total === 0) msg = '오늘의 첫 목표를 만들어봐용!';
+    else if (done === total) msg = '오늘 목표를 모두 해냈어용! 🎉';
+    else if (done > 0) msg = '오늘 한 걸음 나아갔어용!';
+    var _dm=document.getElementById('duckMessage'); if(_dm) _dm.textContent = msg;
+    updateNudge();
+  }
+
+  // ===== 목표 완료/취소 처리 (서버 함수) =====
+  // 보상은 서버가 지급: 같은 목표는 하루 1번만 💎20 (체크 해제→재체크로 무한 획득 불가)
+  async function toggle(i) {
+    var t = state.tasks[i];
+    if (!t || busy) return;
+    busy = true;
+    var wasDone = t.done;
+    var prevLv = calcLevel();
+    t.done = !wasDone;      // 화면은 바로 반응
+    render();
+    try {
+      if (wasDone) {
+        var un = await sb.rpc('uncomplete_task', { p_task_id: t.id });
+        if (un.error) throw un.error;
+        await refresh();
+        render();
+        return;
+      }
+      var res = await sb.rpc('complete_task', { p_task_id: t.id });
+      if (res.error) throw res.error;
+      var r = res.data || {};
+      await refresh();
+      render();
+      if (r.already) return;
+      if (!r.earned_gems) {
+        // 오늘 이미 보상 받은 목표 → 효과음만
+        playSfx('click');
+        if (r.streak_up) toast('🔥 ' + r.streak + '일 연속!');
+        return;
+      }
+      playSfx('success');
+      var gemText = document.getElementById('modalGemText');
+      if (gemText) gemText.textContent = '💎 +' + r.earned_gems + ' 보석' + (r.streak_up ? '  ·  🔥 ' + r.streak + '일 연속!' : '');
+      var missionModal = document.getElementById('modal');
+      if (missionModal) missionModal.classList.add('show');
+      var newLv = calcLevel();
+      if (newLv > prevLv) {
+        setTimeout(function() {
+          var levelUpLv = document.getElementById('levelUpLv');
+          var levelUpName = document.getElementById('levelUpName');
+          var levelUpText = document.getElementById('levelUpText');
+          var levelUpModal = document.getElementById('levelModal');
+          if (levelUpLv) levelUpLv.textContent = 'Lv. ' + newLv;
+          if (levelUpName) levelUpName.textContent = levelTitle(newLv);
+          if (levelUpText) levelUpText.textContent = '치용이 Lv.' + newLv + '이 됐어용!';
+          if (levelUpModal) levelUpModal.classList.add('show');
+          playSfx('levelup');
+        }, 400);
+      }
+    } catch (e) {
+      toast(errMsg(e));
+      try { await refresh(); } catch (e2) { t.done = wasDone; }
+      render();
+    } finally {
+      busy = false;
+    }
+  }
+
+  document.getElementById('startBtn').onclick = function() { show('type'); };
+
+  var typeChoices = document.querySelectorAll('[data-type]');
+  for (var i = 0; i < typeChoices.length; i++) {
+    typeChoices[i].onclick = function() {
+      state.type = this.getAttribute('data-type');
+      for (var j = 0; j < typeChoices.length; j++) {
+        typeChoices[j].classList.remove('selected');
+      }
+      this.classList.add('selected');
+      document.getElementById('typeError').textContent = '';
+    };
+  }
+
+  document.getElementById('typeNext').onclick = function() {
+    if (!state.type) {
+      document.getElementById('typeError').textContent = '하나를 선택해줘용!';
+      return;
+    }
+    document.getElementById('selectedTypeText').textContent = state.type + '을(를) 만들고 있어용.';
+    document.getElementById('firstInput').value = '';
+    document.getElementById('goalError').textContent = '';
+    show('create');
+  };
+
+  document.getElementById('createBtn').onclick = async function() {
+    var text = document.getElementById('firstInput').value.trim();
+    if (!text) {
+      document.getElementById('goalError').textContent = '첫 목표를 적어줘용!';
+      return;
+    }
+    if (busy) return;
+    busy = true;
+    var btn = this;
+    btn.disabled = true;
+    try {
+      var r1 = await sb.from('tasks').insert({ text: text, kind: TYPE_TO_KIND[state.type] || 'must' });
+      if (r1.error) throw r1.error;
+      var r2 = await sb.from('profiles').update({ onboarded: true }).eq('id', currentUser.id);
+      if (r2.error) throw r2.error;
+      await refresh();
+      state.type = '';
+      show('home');
+      setTimeout(function() {
+        processDailyLogin().then(function(bonus) {
+          if (bonus) { showDailyBonus(bonus); try { render(); } catch (e) {} }
+        });
+      }, 300);
+    } catch (e) {
+      document.getElementById('goalError').textContent = errMsg(e);
+    } finally {
+      busy = false;
+      btn.disabled = false;
+    }
+  };
+
+  function openAdd() {
+    state.type = '';
+    document.getElementById('addInput').value = '';
+    document.getElementById('addError').textContent = '';
+    var adds = document.querySelectorAll('[data-add-type]');
+    for (var i = 0; i < adds.length; i++) {
+      adds[i].classList.remove('selected');
+    }
+    show('add');
+  }
+  document.getElementById('addBtn').onclick = openAdd;
+
+  var addChoices = document.querySelectorAll('[data-add-type]');
+  for (var i = 0; i < addChoices.length; i++) {
+    addChoices[i].onclick = function() {
+      state.type = this.getAttribute('data-add-type');
+      for (var j = 0; j < addChoices.length; j++) {
+        addChoices[j].classList.remove('selected');
+      }
+      this.classList.add('selected');
+      document.getElementById('addError').textContent = '';
+    };
+  }
+
+  document.getElementById('saveAddBtn').onclick = async function() {
+    var text = document.getElementById('addInput').value.trim();
+    if (!state.type || !text) {
+      document.getElementById('addError').textContent = '목표 종류와 내용을 모두 입력해줘용!';
+      return;
+    }
+    if (busy) return;
+    busy = true;
+    var btn = this;
+    btn.disabled = true;
+    try {
+      var res = await sb.from('tasks').insert({ text: text, kind: TYPE_TO_KIND[state.type] || 'must' });
+      if (res.error) throw res.error;
+      await refresh();
+      state.type = '';
+      show('home');
+      toast('목표가 추가됐어용! ✨');
+    } catch (e) {
+      document.getElementById('addError').textContent = errMsg(e);
+    } finally {
+      busy = false;
+      btn.disabled = false;
+    }
+  };
+  document.getElementById('cancelAddBtn').onclick = function() { show('home'); };
+
+  var navBtns = document.querySelectorAll('.navbtn');
+  for (var i = 0; i < navBtns.length; i++) {
+    navBtns[i].onclick = function() {
+      var go = this.getAttribute('data-go');
+      if (go === 'add') openAdd();
+      else show(go);
+    };
+  }
+
+  document.getElementById('closeModal').onclick = function() {
+    document.getElementById('modal').classList.remove('show');
+    show('home');
+  };
+  document.getElementById('modal').onclick = function(e) {
+    if (e.target.id === 'modal') {
+      document.getElementById('modal').classList.remove('show');
+    }
+  };
+  document.getElementById('closeLevelModal').onclick = function() {
+    document.getElementById('levelModal').classList.remove('show');
+  };
+  document.getElementById('levelModal').onclick = function(e) {
+    if (e.target.id === 'levelModal') {
+      document.getElementById('levelModal').classList.remove('show');
+    }
+  };
+  document.getElementById('closeDailyModal').onclick = function() {
+    document.getElementById('dailyModal').classList.remove('show');
+    playSfx('close');
+  };
+  document.getElementById('dailyModal').onclick = function(e) {
+    if (e.target.id === 'dailyModal') {
+      document.getElementById('dailyModal').classList.remove('show');
+    }
+  };
+
+  // ===== 출석 보상 모달 표시 =====
+  // 보상 내용과 일부 날짜 창을 화면에 표시합니다.
+  function showDailyBonus(info) {
+    if (!info) return;
+    var titleEl = document.getElementById('dailyTitle');
+    var textEl = document.getElementById('dailyText');
+    var rewardEl = document.getElementById('dailyReward');
+    var extraEl = document.getElementById('dailyExtra');
+    var track = document.getElementById('dailyTrack');
+    var windowNote = document.getElementById('dailyWindowNote');
+    var progressDay = document.getElementById('dailyProgressDay');
+    var progressPct = document.getElementById('dailyProgressPct');
+    var progressBar = document.getElementById('dailyProgressBar');
+    var specialEl = document.getElementById('monthlySpecial');
+    if (titleEl) titleEl.textContent = info.title;
+    if (textEl) textEl.textContent = info.text;
+    if (rewardEl) rewardEl.textContent = info.rewardText || (info.reward ? info.reward.label : '✅ 오늘 출석 완료');
+    if (extraEl) extraEl.textContent = info.extra || '';
+
+    var daysInMonth = Math.max(1, Number(info.daysInMonth) || (info.rewards ? info.rewards.length : 30));
+    var pct = Math.min(100, Math.round((info.day / daysInMonth) * 100));
+    if (progressDay) progressDay.textContent = 'DAY ' + info.day + ' / ' + daysInMonth;
+    if (progressPct) progressPct.textContent = pct + '%';
+    if (progressBar) progressBar.style.width = pct + '%';
+    if (specialEl && info.monthlyAccessory) {
+      var specialText = info.monthlyAccessory.icon + ' 이달의 월말 장신구 · ' + info.monthlyAccessory.name;
+      if (info.isCalendarMonthEnd) {
+        specialText += info.monthlyClaimed ? ' · ✅ 획득 완료' : ' · 🎁 오늘 획득 가능!';
+        specialEl.className = 'monthly-special' + (info.monthlyClaimed ? '' : ' today-special');
+      } else {
+        specialText += ' · 매달 마지막 날 획득';
+        specialEl.className = 'monthly-special';
+      }
+      specialEl.textContent = specialText;
+    }
+
+    if (track) {
+      track.innerHTML = '';
+
+          // ===== 출석판 표시 범위 =====
+      // 전체 30/31일을 늘어놓지 않고 현재 날짜 주변 최대 7일만 보여줍니다.
+      // 실제 출석 데이터/보상은 전체 날짜를 그대로 유지합니다.
+      // 출석판이 너무 길어지지 않도록 한 번에 최대 7일만 표시해용.
+      // 오늘을 중심으로 가까운 날짜만 보여줘서 한눈에 확인하기 쉽게 해용.
+      var totalRewards = info.rewards.length;
+      var visibleCount = Math.min(7, totalRewards);
+      var currentDay = Math.max(1, Math.min(totalRewards, Number(info.day) || 1));
+      var startDay = Math.max(1, currentDay - Math.floor(visibleCount / 2));
+      if (startDay + visibleCount - 1 > totalRewards) {
+        startDay = Math.max(1, totalRewards - visibleCount + 1);
+      }
+      var endDay = Math.min(totalRewards, startDay + visibleCount - 1);
+
+      if (windowNote) {
+        windowNote.textContent = visibleCount < totalRewards
+          ? (startDay + '일차 ~ ' + endDay + '일차만 표시 · 오늘 주변 보상')
+          : '이번 달 출석 보상 전체 표시';
+      }
+
+      for (var i = startDay - 1; i < endDay; i++) {
+        var n = i + 1;
+        var data = info.rewards[i];
+        var card = document.createElement('div');
+        var isComplete = !!info.monthComplete;
+        card.className = 'daily-day' + (isComplete ? ' claimed' : '') + (!isComplete && n < info.day ? ' claimed' : '') + (!isComplete && n === info.day ? ' today' : '') + (!isComplete && n > info.day ? ' future' : '');
+        var label = document.createElement('span');
+        label.className = 'day-label';
+        label.textContent = n + '일차';
+        var icon = document.createElement('span');
+        icon.className = 'day-icon';
+        icon.textContent = data.icon;
+        var amount = document.createElement('span');
+        amount.className = 'day-reward';
+        amount.textContent = data.label;
+        card.appendChild(label);
+        card.appendChild(icon);
+        card.appendChild(amount);
+        track.appendChild(card);
+      }
+    }
+    // 출석 선물로 모자/스킨을 얻었다면, 모달을 띄울 때 치용 모습도 즉시 갱신해용.
+    applySkin();
+    var dailyModal = document.getElementById('dailyModal');
+    if (dailyModal) dailyModal.classList.add('show');
+    playSfx('reward');
+  }
+
+  document.getElementById('resetBtn').onclick = async function() {
+    if (!confirm('정말 처음부터 다시 시작할까요?\n모든 목표와 보석, 연속 기록, 치용 꾸미기, 출석 기록이 사라져요.')) return;
+    if (busy) return;
+    busy = true;
+    try {
+      var res = await sb.rpc('reset_my_progress');
+      if (res.error) throw res.error;
+      await refresh();
+      applySkin();
+      show('welcome');
+      toast('새로운 시작이에용! 🌱');
+    } catch (e) {
+      toast(errMsg(e));
+    } finally {
+      busy = false;
+    }
+  };
+
+  // ===== 로그인 / 로그아웃 =====
+  document.getElementById('googleBtn').onclick = async function() {
+    var err = document.getElementById('loginError');
+    err.textContent = '';
+    if (!sb || SUPABASE_URL.indexOf('YOUR-PROJECT') >= 0) {
+      err.textContent = 'index.html 의 SUPABASE_URL / SUPABASE_ANON_KEY 를 먼저 설정해줘용!';
+      return;
+    }
+    if (location.protocol === 'file:') {
+      err.textContent = '파일을 바로 열면 로그인이 안 돼용. Live Server(http://localhost) 나 배포 주소로 열어줘용!';
+      return;
+    }
+    this.disabled = true;
+    var res = await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: location.origin + location.pathname }
+    });
+    if (res.error) {
+      err.textContent = errMsg(res.error);
+      this.disabled = false;
+    }
+  };
+
+  document.getElementById('logoutBtn').onclick = async function() {
+    if (!confirm('로그아웃할까요?')) return;
+    await sb.auth.signOut();
+  };
+
+  // ===== 효과음 설정 UI 이벤트 =====
+  var soundToggle = document.getElementById('soundToggle');
+  if (soundToggle) {
+    soundToggle.onchange = function() {
+      state.soundOn = !!this.checked;
+      save();
+      if (state.soundOn) {
+        playSfx('success');
+      }
+    };
+  }
+
+  var testSoundBtn = document.getElementById('testSoundBtn');
+  if (testSoundBtn) {
+    testSoundBtn.onclick = function() {
+      if (!state.soundOn) {
+        state.soundOn = true;
+        if (soundToggle) soundToggle.checked = true;
+        save();
+      }
+      playSfx('reward');
+    };
+  }
+
+  // ===== 다크 모드 설정 UI 이벤트 =====
+  // 체크박스를 누른 위치를 중심으로 원형으로 퍼지는 테마 전환을 실행합니다.
+  var darkModeToggle = document.getElementById('darkModeToggle');
+  var themeWipe = document.getElementById('themeWipe');
+
+  function runThemeTransition(nextDark, event) {
+    var x = window.innerWidth / 2;
+    var y = window.innerHeight / 2;
+    if (event && event.clientX != null) {
+      x = event.clientX;
+      y = event.clientY;
+    } else if (document.getElementById('themeToggle')) {
+      var rect = document.getElementById('themeToggle').getBoundingClientRect();
+      x = rect.left + rect.width / 2;
+      y = rect.top + rect.height / 2;
+    }
+
+    document.documentElement.style.setProperty('--theme-x', x + 'px');
+    document.documentElement.style.setProperty('--theme-y', y + 'px');
+
+    if (themeWipe) {
+      themeWipe.classList.remove('running', 'light');
+      if (!nextDark) themeWipe.classList.add('light');
+      void themeWipe.offsetWidth;
+    }
+
+    var updateTheme = function() {
+      state.darkMode = !!nextDark;
+      save();
+      applyTheme();
+    };
+
+    if (typeof document.startViewTransition === 'function') {
+      try {
+        var transition = document.startViewTransition(updateTheme);
+        transition.ready.catch(function() {});
+        transition.finished.catch(function() {});
+      } catch (e) {
+        updateTheme();
+      }
+    } else {
+      updateTheme();
+      if (themeWipe) {
+        themeWipe.classList.add('running');
+        setTimeout(function() {
+          themeWipe.classList.remove('running');
+        }, 590);
+      }
+    }
+    playSfx('click');
+  }
+
+  if (darkModeToggle) {
+    darkModeToggle.onchange = function(e) {
+      runThemeTransition(!!this.checked, e);
+    };
+  }
+
+  // ===== 리마인드 설정 UI 이벤트 =====
+  document.getElementById('remindToggle').onchange = function() {
+    var err = document.getElementById('remindError');
+    err.textContent = '';
+    if (this.checked) {
+      if (typeof Notification === 'undefined') {
+        err.textContent = '이 브라우저는 알림을 지원하지 않아용.';
+        this.checked = false;
+        state.remindOn = false;
+        save();
+        return;
+      }
+      if (Notification.permission === 'granted') {
+        state.remindOn = true;
+        save();
+        return;
+      }
+      if (Notification.permission === 'denied') {
+        err.textContent = '알림이 차단돼 있어용. 브라우저 설정에서 허용해줘용.';
+        this.checked = false;
+        state.remindOn = false;
+        save();
+        return;
+      }
+      var self = this;
+      Notification.requestPermission().then(function(perm) {
+        if (perm === 'granted') {
+          state.remindOn = true;
+          save();
+          sendRemind(true);
+        } else {
+          err.textContent = '알림 권한이 필요해용.';
+          self.checked = false;
+          state.remindOn = false;
+          save();
+        }
+      });
+    } else {
+      state.remindOn = false;
+      save();
+    }
+  };
+
+  document.getElementById('remindTime').onchange = function() {
+    var parts = (this.value || '20:00').split(':');
+    var chosenHour = parseInt(parts[0], 10);
+    var chosenMin = parseInt(parts[1], 10);
+    // 시각 00:00도 정상적으로 저장되도록 NaN만 기본값으로 처리해용.
+    state.remindHour = isFinite(chosenHour)
+      ? Math.min(23, Math.max(0, chosenHour)) : 20;
+    state.remindMin = isFinite(chosenMin)
+      ? Math.min(59, Math.max(0, chosenMin)) : 0;
+    // 시간 바꾸면 오늘 알림 다시 보낼 수 있게
+    state.lastRemindDate = '';
+    save();
+  };
+
+  document.getElementById('testRemindBtn').onclick = function() {
+    var err = document.getElementById('remindError');
+    err.textContent = '';
+    if (typeof Notification === 'undefined') {
+      err.textContent = '이 브라우저는 알림을 지원하지 않아용.';
+      return;
+    }
+    if (Notification.permission === 'granted') {
+      sendRemind(true);
+      return;
+    }
+    if (Notification.permission === 'denied') {
+      err.textContent = '알림이 차단돼 있어용. 브라우저 설정에서 허용해줘용.';
+      return;
+    }
+    Notification.requestPermission().then(function(perm) {
+      if (perm === 'granted') {
+        sendRemind(true);
+      } else {
+        err.textContent = '알림 권한이 필요해용.';
+      }
+    });
+  };
+
+  // 한글 입력 조합 중 Enter 는 무시 (안드로이드·아이패드 키보드에서 두 번 입력되는 문제 방지)
+  document.getElementById('firstInput').onkeydown = function(e) {
+    if (e.key === 'Enter' && !e.isComposing) document.getElementById('createBtn').click();
+  };
+  document.getElementById('addInput').onkeydown = function(e) {
+    if (e.key === 'Enter' && !e.isComposing) document.getElementById('saveAddBtn').click();
+  };
+
+  syncSoundUI();
+  applyTheme();
+  applySkin();
+
+  // ===== 로그인 상태에 따라 화면 결정 =====
+  async function handleSession(session) {
+    var uid = session ? session.user.id : null;
+    if (uid === handledUserId) return;
+    handledUserId = uid;
+
+    if (!session) {
+      var prefs = { soundOn: state.soundOn, darkMode: state.darkMode, remindOn: state.remindOn,
+                    remindHour: state.remindHour, remindMin: state.remindMin, lastRemindDate: state.lastRemindDate };
+      currentUser = null;
+      state = fresh();
+      for (var k in prefs) state[k] = prefs[k];
+      var gb = document.getElementById('googleBtn');
+      if (gb) gb.disabled = false;
+      applySkin();
+      show('login');
+      return;
+    }
+
+    currentUser = session.user;
+    state.email = session.user.email || '';
+    try {
+      await refresh();
+      applySkin();
+      show(state.started ? 'home' : 'welcome');
+      setTimeout(function() {
+        processDailyLogin().then(function(bonus) {
+          if (bonus) { showDailyBonus(bonus); try { render(); } catch (e) {} }
+        });
+      }, 400);
+    } catch (e) {
+      show('login');
+      var err = document.getElementById('loginError');
+      if (err) err.textContent = errMsg(e);
+    }
+  }
+
+  // 런치 스크린(2초) → 로그인 확인
+  setTimeout(function() {
+    if (!sb || SUPABASE_URL.indexOf('YOUR-PROJECT') >= 0) {
+      show('login');
+      document.getElementById('loginError').textContent = 'index.html 의 SUPABASE_URL / SUPABASE_ANON_KEY 를 먼저 설정해줘용!';
+      return;
+    }
+    // 콜백 안에서 바로 await 하면 supabase-js 가 멈출 수 있어서 setTimeout 으로 넘겨요
+    sb.auth.onAuthStateChange(function(event, session) {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'INITIAL_SESSION') {
+        setTimeout(function() { handleSession(session); }, 0);
+      }
+    });
+  }, 2000);
+
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    navigator.serviceWorker.register('sw.js').catch(function() {});
+  }
+})();
+</script>
+</body>
+</html>
